@@ -159,6 +159,7 @@ def registration(message_text, viber_user):
         min_api_version=6)
     viber.send_messages(viber_user.viber_id, [response_message])
 
+
 # Послуги
 def service_0(viber_user):
     keyboard = keyboards.service_0()
@@ -168,6 +169,7 @@ def service_0(viber_user):
         min_api_version=6)
     viber.send_messages(viber_user.viber_id, [response_message])
 
+
 # Послуги дочірні
 def service_1(viber_user, service_id):
     keyboard = keyboards.service_1(service_id)
@@ -176,6 +178,7 @@ def service_1(viber_user, service_id):
         keyboard=keyboard[1],
         min_api_version=6)
     viber.send_messages(viber_user.viber_id, [response_message])
+
 
 # Стан заявок
 def status_service_request(viber_user):
@@ -195,6 +198,7 @@ def status_service_request(viber_user):
         min_api_version=6)
     viber.send_messages(viber_user.viber_id, [response_message])
 
+
 # Налаштування
 def setting(viber_user):
     keyboard = keyboards.setting()
@@ -204,10 +208,12 @@ def setting(viber_user):
         min_api_version=6)
     viber.send_messages(viber_user.viber_id, [response_message])
 
+
 # Функція записує меню у вайбер-користувача
 def save_menu(viber_user, menu):
     viber_user.menu = menu
     viber_user.save()
+
 
 # Функція обробки створення заявки
 def create_service_request(viber_user, message_text, lat, lon, address):
@@ -236,6 +242,7 @@ def create_service_request(viber_user, message_text, lat, lon, address):
         viber.send_messages(viber_user.viber_id, [response_message])
     else:
         print("НЕ НАШЛИ РАСПОЛОЖЕНИЕ")
+
 
 # Функція обробки кнопки "підтвердження" на створення заявку
 def verification_service_request(viber_user):
@@ -268,6 +275,7 @@ def verification_service_request(viber_user):
 
         service_request_handler(service_request)
 
+
 # Функція яка додає виконавців і оповіщує їх про створення нової заяки
 def service_request_handler(service_request):
     print(service_request.position)
@@ -281,6 +289,7 @@ def service_request_handler(service_request):
             keyboard=keyboard,
             min_api_version=6)
         viber.send_messages(executor.viber_id, [response_message])
+
 
 # Заявки для майстрів
 def master_service_requests(viber_user):
@@ -298,6 +307,7 @@ def master_service_requests(viber_user):
         min_api_version=6)
     viber.send_messages(viber_user.viber_id, [response_message])
 
+
 # Конкретна заявка для майстра
 def master_service_request(viber_user, service_request):
     keyboard = keyboards.master_service_request(service_request)
@@ -308,6 +318,7 @@ def master_service_request(viber_user, service_request):
         min_api_version=6)
     viber.send_messages(viber_user.viber_id, [response_message])
 
+
 # Функція обробки кнопки "погодження" на реєстрацію майстра
 def master_registration_page_view(request, viber_id):
     # services = Service.objects.filter()
@@ -315,6 +326,7 @@ def master_registration_page_view(request, viber_id):
     services = json.dumps(nodeToJSON(Service, None), ensure_ascii=False)
     position = json.dumps(nodeToJSON(Position, None), ensure_ascii=False)
     return render(request, 'master_registration_page.html', {'user': viber_user, 'services': services, 'position': position})
+
 
 # Функція древовидний запис у Json
 def nodeToJSON(model_name, id):
