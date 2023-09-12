@@ -1,0 +1,84 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ua">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Реєстрація майстра</title>
+  <link rel="stylesheet" type="text/css" href="{% static 'viber_bot/style.css' %}">
+</head>
+
+<body>
+  <div class="registration-form">
+    <h2>Реєстрація майстра</h2>
+    <p>Заповніть форму нижче і ми з вами зв'яжемося</p>
+
+    <form method="post" action="{% url 'master_registration/registration_submit' %}" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div>
+        <div class="txt-label">
+          <label for="full_name"><span class="req">*</span>Прізвище, ім’я та по батькові:</label>
+        </div>
+        <div class="txt-input">
+          <input type="text" id="full_name" name="full_name" value="{{ viber_user.full_name }}" required>
+        </div>
+      </div>
+
+
+      <div class="dropdown">
+        <div class="listOfWorks">
+          <span class="button" id="listOfWorksButton">Перелік робіт:
+            <div>
+              <p>Роботи які ви можете виконувати</p>
+            </div>
+          </span>
+          <span class="hidden list" id="listOfWorksList">
+            <ul>
+              {% for service in services %}
+              <li>
+                <input type="checkbox" name="service::{{service.id}}" {% if service in viber_user.service.all %}checked{% endif %}>
+                <label>{{service.name}}</label>
+              </li>
+              {% endfor %}
+            </ul>
+          </span>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <div class="listOfWorks">
+          <span class="button" id="listOfCertificatesButton">Ваші сертифікати:
+            <div>
+              <p>Завантажте сертифікати які у вас є</p>
+            </div>
+          </span>
+          <span class="hidden" id="listOfCertificatesList">
+            <ul>
+              <li>
+                <label for="certificates::bosch">Сертифікат Bosch</label>
+                <input type="file" name="certificates::bosch" id="certificates::bosch">
+              </li>
+              <li>
+                <label for="certificates::ariston">Сертифікат Ariston</label>
+                <input type="file" name="certificates::ariston" id="certificates::ariston">
+              </li>
+            </ul>
+          </span>
+        </div>
+      </div>
+
+      <input type="hidden" name="viber_id" value="{{ viber_user.viber_id }}">
+      <button type="submit">Зареєструватись</button>
+      <p><span class="req">*</span> - Обов'язковий</p>
+    </form>
+
+
+
+  </div>
+  <script src="{% static 'viber_bot/script.js' %}"></script>
+</body>
+
+</html>

@@ -1,0 +1,125 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f5f5f5;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.registration-form {
+  max-width: 300px;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 5px;
+  box-shadow: 0 0 5px 5px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.registration-form h2 {
+  text-align: center;
+  font-weight: bold;
+}
+
+.registration-form p {
+  color: #919191;
+  font-weight: bold;
+  text-align: start;
+}
+
+.registration-form .txt-label {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.registration-form .txt-input {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+
+.registration-form .txt-input input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.registration-form .dropdown .listOfWorks{
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  flex-direction: row;
+}
+
+.registration-form .dropdown .button {
+  width: 100%;
+  margin-bottom: 15px;
+  padding: 10px;
+  padding-top: 10px;
+  background-color: #4CAF50;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  text-align: start;
+}
+
+.registration-form .dropdown .button p{
+  color: #fff;
+  font-size: 13px;
+  font-weight: normal;
+  line-height: 0px;
+}
+
+.registration-form .dropdown .list ul {
+  display: flex;
+  justify-content: flex-start;
+  flex-direction: column;
+}
+
+.registration-form .dropdown .list li {
+  display: grid;
+  grid-template-columns: 0fr 3.5fr;
+  justify-items: start;
+  text-align: start;
+}
+
+
+.registration-form .dropdown ul {
+    padding-inline-start: 0px;
+}
+
+
+.registration-form .dropdown li {
+  display: flex;
+  justify-items: start;
+  text-align: start;
+  list-style: none;
+  flex-direction: column;
+}
+
+.registration-form .req {
+  color: red;
+}
+
+.hidden {
+  display: none;
+}
+
+
+
+
+
+
+.registration-form button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  background-color: #4CAF50;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+}
