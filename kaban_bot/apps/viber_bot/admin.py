@@ -36,14 +36,12 @@ class ViberUserForm(forms.ModelForm):
         model = ViberUser
         fields = '__all__'
 
-
-
 class ViberUserAdmin(admin.ModelAdmin):
     list_display = ['viber_id', 'full_name', 'executor', 'createdon', 'status_code']
     form = ViberUserForm
     fieldsets = (
         (None, {
-            'fields': ('full_name', 'executor', 'viber_id', 'menu'),
+            'fields': ('full_name', 'phone_number', 'executor', 'viber_id', 'menu'),
         }),
         ('Рейтинг', {
             'classes': ('collapse',),
@@ -57,8 +55,42 @@ class ViberUserAdmin(admin.ModelAdmin):
 admin.site.register(ViberUser, ViberUserAdmin)
 
 
+
+class ServiceRequestForm(forms.ModelForm):
+    # Определяем форму с виджетом FilteredSelectMultiple для поля ManyToManyField 'executors'
+    executors = forms.ModelMultipleChoiceField(
+        queryset=ViberUser.objects.all(),
+        widget=FilteredSelectMultiple("Виконавці", is_stacked=False),
+        required=False,
+    )
+    # Определяем форму с виджетом FilteredSelectMultiple для поля ManyToManyField 'rejected_executors'
+    rejected_executors = forms.ModelMultipleChoiceField(
+        queryset=ViberUser.objects.all(),
+        widget=FilteredSelectMultiple("Відхилені виконавці", is_stacked=False),
+        required=False,
+    )
+
+    class Meta:
+        model = ServiceRequest
+        fields = '__all__'
+
 class ServiceRequestAdmin(admin.ModelAdmin):
     list_display = ['number', 'customer', 'createdon', 'status_code']
+    form = ServiceRequestForm
+    fieldsets = (
+        (None, {
+            'fields': ('number', 'customer', 'status_code', 'modifiedon',),
+        }),
+        ('Додаткові дані про заявку:', {
+            'classes': ('wide',),
+            'fields': ('position', 'address', 'service'),
+        }),
+        ('Виконавці', {
+            'classes': ('wide',),
+            'fields': ('executors', 'rejected_executors'),
+        }),
+    )
+    readonly_fields = ('modifiedon',)
 admin.site.register(ServiceRequest, ServiceRequestAdmin)
 
 

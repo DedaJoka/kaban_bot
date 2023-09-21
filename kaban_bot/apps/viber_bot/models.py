@@ -92,6 +92,7 @@ class ViberUser(models.Model):
     # Кастомні поля
     viber_id = models.CharField(verbose_name="Вайбер ідентифікатор", max_length=100, blank=False)
     full_name = models.CharField(verbose_name="ПІБ", max_length=100, blank=True)
+    phone_number = models.CharField("Телефон", max_length=13, blank=True, null=True)
     menu = models.CharField(verbose_name="Меню", max_length=100, blank=True)
     address = models.CharField(verbose_name="Адреса", max_length=400, blank=True, null=True)
     position = models.ManyToManyField(Position, verbose_name="Розташування", related_name='viber_user_position')
@@ -121,19 +122,28 @@ class ViberUser(models.Model):
 class ServiceRequest(models.Model):
     # Стандартні поля
     createdon = models.DateTimeField("Дата створення", auto_now_add=True, blank=True)
+    modifiedon = models.DateTimeField("Дата змін", auto_now_add=True, blank=True)
     status_code_set = (('0', 'Створена'),
                        ('1', 'В роботі'),
                        ('2', 'Виконана'),
-                       ('3', 'Скасована'))
+                       ('3', 'Скасована'),
+                       ('4', 'Очікування майстра'),
+                       ('5', 'Очікування підтвердження'),
+                       ('6', 'В роботі (Підтверджений майстер)'),
+                       ('7', 'Уточнення (від майстра)'),
+                       ('8', 'Уточнення (від клієнта)'),
+                       ('9', 'Завершено'),)
     status_code = models.CharField(verbose_name="Стан", choices=status_code_set, max_length=1, default=0)
 
     # Кастомні поля
-    number = models.CharField(verbose_name="Назва", max_length=19, blank=True)
+    number = models.CharField(verbose_name="Номер", max_length=19, blank=True)
     customer = models.ForeignKey(ViberUser, verbose_name="Замовник", on_delete=models.CASCADE, related_name='service_requests_customer')
     executors = models.ManyToManyField(ViberUser, verbose_name="Виконавці", related_name='service_requests_executors')
+    rejected_executors = models.ManyToManyField(ViberUser, verbose_name="Відхилені Виконавці", related_name='service_requests_rejected_executors', blank=True)
     address = models.CharField(verbose_name="Адреса", max_length=400, blank=True, null=True)
     position = models.ForeignKey(Position, verbose_name="Населений пункт", on_delete=models.CASCADE, related_name='service_requests_position')
     service = models.ForeignKey(Service, verbose_name="Послуга", on_delete=models.CASCADE, related_name='service_requests_service')
+    confirmed = models.BooleanField(verbose_name="Підтверджена", default=False)
 
 
     class Meta:
