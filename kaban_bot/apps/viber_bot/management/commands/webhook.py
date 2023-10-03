@@ -8,11 +8,11 @@ from django.core.management.base import BaseCommand, CommandError
 class Command(BaseCommand):
     help = 'Команда для встановлення або видалення webhook'
 
-    def add_arguments(self, parser):
-        parser.add_argument('--url', type=str, help='Аргумент для передачі посилання webhook')
+    # def add_arguments(self, parser):
+    #     parser.add_argument('--url', type=str, help='Аргумент для передачі посилання webhook')
 
     def handle(self, *args, **options):
-        url = options['url']
+        url = config.domain
         print(f"Запустили команду webhook")
 
         headers = {'X-Viber-Auth-Token': config.TOKEN}

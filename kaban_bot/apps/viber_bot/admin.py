@@ -41,7 +41,7 @@ class ViberUserAdmin(admin.ModelAdmin):
     form = ViberUserForm
     fieldsets = (
         (None, {
-            'fields': ('full_name', 'phone_number', 'executor', 'viber_id', 'menu'),
+            'fields': ('full_name', 'phone_number', 'executor', 'viber_id', 'menu', 'system_administrator'),
         }),
         ('Рейтинг', {
             'classes': ('collapse',),
@@ -100,11 +100,11 @@ admin.site.register(Position, PositionAdmin)
 
 
 class ServiceAdmin(DraggableMPTTAdmin):
-    list_display = ('tree_actions', 'indented_title', 'priority')
+    list_display = ('tree_actions', 'indented_title', 'productnumber', 'priority')
     list_display_links = ('indented_title',)
     fieldsets = (
         ('Загальна інформація', {
-            'fields': ('status_code', 'name', 'parent'),
+            'fields': ('status_code', 'name', 'productnumber', 'parent'),
         }),
         ('Налаштування кнопки', {
             'fields': ('priority', 'image', 'rows', 'columns',),

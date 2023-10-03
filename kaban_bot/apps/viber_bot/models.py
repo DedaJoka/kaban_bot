@@ -1,6 +1,10 @@
+import json
+
 from django.db import models
 from mptt.models import MPTTModel, TreeForeignKey
 from django.core.validators import MinValueValidator, MaxValueValidator
+from rabbitmq.management.commands.package_creator import CustomCreate
+
 
 
 # Create your models here.
@@ -47,6 +51,7 @@ class Service(MPTTModel):
 
     # Кастомні поля
     name = models.CharField(verbose_name="Назва", max_length=100, blank=True)
+    productnumber = models.CharField(verbose_name="Код продукту", max_length=100, blank=True)
     parent = TreeForeignKey('self', verbose_name="Батьківська послуга", on_delete=models.CASCADE, null=True, blank=True,
                             related_name='children')
     image = models.FileField(verbose_name="Зображення", upload_to='viber_bot_buttons/')
@@ -98,15 +103,16 @@ class ViberUser(models.Model):
     position = models.ManyToManyField(Position, verbose_name="Розташування", related_name='viber_user_position')
     service = models.ManyToManyField(Service, verbose_name="Послуги", related_name='viber_user_service')
     executor = models.BooleanField(verbose_name="Виконавець", default=False)
+    system_administrator = models.BooleanField(verbose_name="Системний адміністратор", default=False)
     customer_rating = models.FloatField(
         verbose_name="Рейтинг клієнта",
         validators=[MinValueValidator(0.0), MaxValueValidator(5.0)],
-        blank=True, null=True
+        default=0, blank=True, null=True
     )
     executor_rating = models.FloatField(
         verbose_name="Рейтинг майстра",
         validators=[MinValueValidator(0.0), MaxValueValidator(5.0)],
-        blank=True, null=True
+        default=0, blank=True, null=True
     )
 
 
@@ -144,6 +150,30 @@ class ServiceRequest(models.Model):
     position = models.ForeignKey(Position, verbose_name="Населений пункт", on_delete=models.CASCADE, related_name='service_requests_position')
     service = models.ForeignKey(Service, verbose_name="Послуга", on_delete=models.CASCADE, related_name='service_requests_service')
     confirmed = models.BooleanField(verbose_name="Підтверджена", default=False)
+
+    def save(self, *args, **kwargs):
+
+        # Вызов оригинального метода save() для выполнения сохранения записи
+        super().save(*args, **kwargs)
+
+        # отправляем пакет!
+        body = {
+            'status_code': self.status_code,
+            'number': self.number,
+            'customer': self.customer.viber_id,
+            'address': self.address,
+            'position': self.position.codifier,
+            'service': self.service.productnumber
+        }
+        if self.status_code == 5 or self.status_code == 6:
+            executor = self.executors.first()
+            body['executor'] = executor.viber_id
+        json_data = json.dumps(body, ensure_ascii=False).encode('utf-8')
+        decoded_json_data = json_data.decode('utf-8')
+        new_package = CustomCreate.create_package(self.id, 'INSERT', 'application/json', 'kvb::service_request', decoded_json_data)
+
+
+
 
 
     class Meta:

@@ -16,6 +16,25 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.views.static import serve
+from django.conf import settings
+
+from django.conf.urls.static import static
+
+
+# def custom_serve(*args, **kwargs):
+#     print('custom_serve')
+#     response = serve(*args, **kwargs)
+#     response['ngrok-skip-browser-warning'] = 'skip-browser-warning';
+#     return response
+#
+#
+#
+# urlpatterns = [
+#     # ... the rest of your URLconf goes here ...
+# ] + static(settings.MEDIA_URL, view=custom_serve, document_root=settings.MEDIA_ROOT) + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),

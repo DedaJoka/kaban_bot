@@ -1,5 +1,5 @@
 from ...models import RabbitPackage
-from viber_bot.models import Position
+from viber_bot.models import Position, Service
 from django.core.management.base import BaseCommand, CommandError
 import json
 
@@ -11,15 +11,30 @@ class Command(BaseCommand):
         print(f"Запустили команду package_handler")
 
         packages = RabbitPackage.objects.filter(direction='0', status_code='1').order_by('-priority', 'createdon')
+
+        packages_handled = 0
         for package in packages:
-            handler(package)
+            if packages_handled < 500:
+                handler(package)
 
+                if package.status_code == 2:
+                    self.stdout.write(self.style.SUCCESS(f'{package.type} - Оброблено'))
+                else:
+                    self.stdout.write(self.style.ERROR(f'{package.type} - Помилка'))
 
+                packages_handled += 1
+            else:
+                self.stdout.write(self.style.SUCCESS(f'Handled {packages_handled}. Exiting...'))
+                break
+        if packages_handled < 500:
+            self.stdout.write(self.style.SUCCESS(f'Handled {packages_handled}. All packages handled. Exiting...'))
 
 
 def handler(package):
     if package.type == 'crm_position':
         crm_position(package)
+    elif package.type == 'crm_product':
+        crm_product(package)
 
 
 def crm_position(package):
@@ -30,7 +45,7 @@ def crm_position(package):
     has_category_code = 'category_code' in data and data['category_code']
     has_parent_codifier = 'parent_codifier' in data and data['parent_codifier']
 
-    if package.operation == 'INSERT' and has_codifier and has_name and has_category_code:
+    if has_codifier and has_name and has_category_code:
         try:
             # Оновлення існуючого
             position = Position.objects.get(codifier=data['codifier'])
@@ -40,7 +55,7 @@ def crm_position(package):
             if position.type_code != data['category_code']:
                 position.type_code = data['category_code']
                 position.save()
-            if has_parent_codifier:
+            if has_parent_codifier and data['parent_codifier'] != 'UA':
                 # parent_codifier є і він має дані
                 try:
                     parent_position = Position.objects.get(codifier=data['parent_codifier'])
@@ -54,6 +69,14 @@ def crm_position(package):
                     package.last_error = f'Не знайдено батьківське розташування з кодифікатором: {data["parent_codifier"]}'
                     package.status_code = 5
                     package.save()
+            elif data['parent_codifier'] == 'UA':
+                # parent_codifier = Україна
+                position.parent = None
+                position.save()
+
+                package.last_error = None
+                package.status_code = 2
+                package.save()
             elif 'parent_codifier' in data:
                 # parent_codifier є але він пустий
                 package.last_error = 'parent_codifier не містить даних!'
@@ -69,24 +92,35 @@ def crm_position(package):
                 package.save()
         except:
             # Створення нового запису
-            if has_parent_codifier:
-                    # parent_codifier є і він має дані
-                    try:
-                        parent_position = Position.objects.get(codifier=data['parent_codifier'])
-                        position = Position(
-                            codifier=data['codifier'],
-                            name=data['name'],
-                            type_code=data['category_code'],
-                            parent=parent_position
-                        ).save()
+            if has_parent_codifier and data['parent_codifier'] != 'UA':
+                # parent_codifier є і він має дані
+                try:
+                    parent_position = Position.objects.get(codifier=data['parent_codifier'])
+                    position = Position(
+                        codifier=data['codifier'],
+                        name=data['name'],
+                        type_code=data['category_code'],
+                        parent=parent_position
+                    ).save()
 
-                        package.last_error = None
-                        package.status_code = 2
-                        package.save()
-                    except:
-                        package.last_error = f'Не знайдено батьківське розташування з кодифікатором: {data["parent_codifier"]}'
-                        package.status_code = 5
-                        package.save()
+                    package.last_error = None
+                    package.status_code = 2
+                    package.save()
+                except:
+                    package.last_error = f'Не знайдено батьківське розташування з кодифікатором: {data["parent_codifier"]}'
+                    package.status_code = 5
+                    package.save()
+            elif data['parent_codifier'] == 'UA':
+                # parent_codifier = Україна
+                position = Position(
+                    codifier=data['codifier'],
+                    name=data['name'],
+                    type_code=data['category_code']
+                ).save()
+
+                package.last_error = None
+                package.status_code = 2
+                package.save()
             elif 'parent_codifier' in data:
                 # parent_codifier є але він пустий
                 package.last_error = 'parent_codifier не містить даних!'
@@ -107,3 +141,39 @@ def crm_position(package):
         package.last_error = 'Відсутні обовязкові аргументи!'
         package.status_code = 5
         package.save()
+
+
+def crm_product(package):
+    data = json.loads(package.body)
+
+    try:
+        service = Service.objects.get(productnumber=data['productnumber'])
+
+        result_successful(package)
+    except:
+        has_parent = 'parent' in data and data['parent']
+        if has_parent:
+            try:
+                parent = Service.objects.get(productnumber=data['parent'])
+
+                service = Service(
+                    productnumber=data['productnumber'],
+                    name=data['name'],
+                    parent=parent
+                ).save()
+
+                result_successful(package)
+            except:
+                result_fail(package, 'Не знайдень батьківської послуги!')
+
+
+def result_successful(package):
+    package.last_error = None
+    package.status_code = 2
+    package.save()
+
+
+def result_fail(package, text):
+    package.last_error = text
+    package.status_code = 5
+    package.save()
