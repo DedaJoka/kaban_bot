@@ -111,6 +111,7 @@ class ServiceAdmin(DraggableMPTTAdmin):
         }),
     )
     inlines = [ServiceChildrenInline]
+    # ordering = ['tree_id', 'level', 'priority']
 admin.site.register(Service, ServiceAdmin)
 
 
