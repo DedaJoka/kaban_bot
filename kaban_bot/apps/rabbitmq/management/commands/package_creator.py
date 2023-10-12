@@ -2,7 +2,7 @@ import base64
 import datetime
 import time
 import pika
-import hashlib
+
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
