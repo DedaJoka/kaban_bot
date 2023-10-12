@@ -12,7 +12,7 @@ class Command(BaseCommand):
     #     parser.add_argument('--url', type=str, help='Аргумент для передачі посилання webhook')
 
     def handle(self, *args, **options):
-        url = config.domain
+        url = config.webhook
         print(f"Запустили команду webhook")
 
         headers = {'X-Viber-Auth-Token': config.TOKEN}
