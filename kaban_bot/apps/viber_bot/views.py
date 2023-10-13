@@ -31,7 +31,7 @@ bot_configuration = BotConfiguration(
 viber = Api(bot_configuration)
 
 
-# @csrf_exempt
+@csrf_exempt
 def incoming(request):
     # Отримуємо тіло запиту
     request_body = request.body
