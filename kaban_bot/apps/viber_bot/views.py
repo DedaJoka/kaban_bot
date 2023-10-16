@@ -206,7 +206,7 @@ def message(request_dict):
             print(f"POSLE POISCOM SERVISA:{service}")
             keyboard = keyboards.service_1(service.parent.id)
             print(f"POSLE keyboard SERVISA:{service.parent.id}")
-            print(viber_user.viber_id)
+            print(keyboard)
             response_message = TextMessage(
                 text=f'Доступно лише з телефону.',
                 keyboard=keyboard,
