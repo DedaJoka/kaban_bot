@@ -209,7 +209,7 @@ def message(request_dict):
             service = Service.objects.get(id = message_text.split('::')[1])
             print(f"POSLE POISCOM SERVISA:{service}")
             keyboard = keyboards.service_1(service.parent.id)
-            print(f"POSLE keyboard SERVISA:{service}")
+            print(f"POSLE keyboard SERVISA:{keyboard}")
             response_message = TextMessage(
                 text=f'Доступно лише з телефону.',
                 keyboard=keyboard,
