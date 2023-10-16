@@ -55,7 +55,7 @@ class Command(BaseCommand):
         except KeyboardInterrupt:
             self.stdout.write(self.style.SUCCESS(f'Received {messages_consumed}. User interrupted. Exiting...'))
         finally:
-            self.stdout.write(self.style.SUCCESS(f'{datetime.now} Received {messages_consumed}. Exiting...'))
+            self.stdout.write(self.style.SUCCESS(f'{datetime.now()} Received {messages_consumed}. Exiting...'))
             connection.close()
 
 
