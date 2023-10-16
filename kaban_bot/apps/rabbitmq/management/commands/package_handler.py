@@ -165,6 +165,15 @@ def crm_product(package):
                 result_successful(package)
             except:
                 result_fail(package, 'Не знайдень батьківської послуги!')
+        else:
+            try:
+                service = Service(
+                    productnumber=data['productnumber'],
+                    name=data['name'],
+                ).save()
+                result_successful(package)
+            except:
+                result_fail(package, 'Не вдалося створити!')
 
 
 def result_successful(package):
