@@ -618,8 +618,6 @@ def service_request_handler(service_request):
     executors = ViberUser.objects.filter(executor=True, position=service_request.position,
                                          service=service_request.service)
 
-    print("ПЫТАЕМСЯ ПОЛУЧИТЬ НЕКИЕХ ВЫКОНАВЦЕВ")
-
     for executor in executors:
         service_request.executors.add(executor)
         keyboard = keyboards.start_menu(executor)
