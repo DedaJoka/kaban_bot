@@ -20,8 +20,6 @@ class Command(BaseCommand):
     help = 'Творець пакетів'
 
     def handle(self, *args, **options):
-        # print(f"Запустили команду package_creator")
-
         connection = pika.BlockingConnection(pika.URLParameters(settings.RABBIT_CONNECTION_STR))
         channel = connection.channel()
         channel.queue_declare(queue='q_broadcast_bot', durable=True)
@@ -56,7 +54,7 @@ class Command(BaseCommand):
         except KeyboardInterrupt:
             self.stdout.write(self.style.SUCCESS(f'Received {messages_consumed}. User interrupted. Exiting...'))
         finally:
-            self.stdout.write(self.style.SUCCESS(f'{current_datetime} Received {messages_consumed}. Exiting...'))
+            self.stdout.write(self.style.SUCCESS(f'{current_datetime} Received {messages_consumed}'))
             connection.close()
 
 
