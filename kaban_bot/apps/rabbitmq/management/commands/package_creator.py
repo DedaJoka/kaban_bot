@@ -19,7 +19,7 @@ class Command(BaseCommand):
     help = 'Творець пакетів'
 
     def handle(self, *args, **options):
-        print(f"Запустили команду package_creator")
+        # print(f"Запустили команду package_creator")
 
         connection = pika.BlockingConnection(pika.URLParameters(settings.RABBIT_CONNECTION_STR))
         channel = connection.channel()
@@ -47,15 +47,15 @@ class Command(BaseCommand):
                                                     type=header['type'],
                                                     body=decode_body)
                         new_package.save()
-                    self.stdout.write(self.style.SUCCESS(f'Received message: {header["type"]}'))
+                    # self.stdout.write(self.style.SUCCESS(f'Received message: {header["type"]}'))
 
                 else:
-                    self.stdout.write(self.style.SUCCESS(f'Received {messages_consumed}. Queue is empty. Exiting...'))
+                    # self.stdout.write(self.style.SUCCESS(f'Received {messages_consumed}. Queue is empty. Exiting...'))
                     break
         except KeyboardInterrupt:
             self.stdout.write(self.style.SUCCESS(f'Received {messages_consumed}. User interrupted. Exiting...'))
         finally:
-            self.stdout.write(self.style.SUCCESS(f'Received {messages_consumed}. Exiting...'))
+            self.stdout.write(self.style.SUCCESS(f'{datetime.now} Received {messages_consumed}. Exiting...'))
             connection.close()
 
 

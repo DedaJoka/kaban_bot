@@ -21,25 +21,9 @@ from django.conf import settings
 
 from django.conf.urls.static import static
 
-
-# def custom_serve(*args, **kwargs):
-#     print('custom_serve')
-#     response = serve(*args, **kwargs)
-#     response['ngrok-skip-browser-warning'] = 'skip-browser-warning';
-#     return response
-#
-#
-#
-# urlpatterns = [
-#     # ... the rest of your URLconf goes here ...
-# ] + static(settings.MEDIA_URL, view=custom_serve, document_root=settings.MEDIA_ROOT) + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-
-
-
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('viber_bot.urls')),
 ]
 
-# urlpatterns += static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
