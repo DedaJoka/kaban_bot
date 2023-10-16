@@ -201,15 +201,11 @@ def message(request_dict):
             service_request = ServiceRequest.objects.get(number=split_message_text[1])
             my_request_assessment_handler(viber_user, service_request, split_message_text[3])
         elif re.match(r'^service::\d{1,3}::location$', message_text):
-            print("PERED POISCOM SERVISA")
             service = Service.objects.get(id=message_text.split('::')[1])
-            print(f"POSLE POISCOM SERVISA:{service}")
             keyboard = keyboards.service_1(service.parent.id)
-            print(f"POSLE keyboard SERVISA:{service.parent.id}")
-            print(keyboard[1])
             response_message = TextMessage(
                 text=f'Доступно лише з телефону.',
-                keyboard=keyboard,
+                keyboard=keyboard[1],
                 min_api_version=6)
             viber.send_messages(viber_user.viber_id, [response_message])
         # Майстр
