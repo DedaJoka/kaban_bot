@@ -204,7 +204,7 @@ def message(request_dict):
             service = Service.objects.get(id=message_text.split('::')[1])
             keyboard = keyboards.service_1(service.parent.id)
             response_message = TextMessage(
-                text=f'Доступно лише з телефону.',
+                text=f'Нажаль надання локації доступне лише з телефону. Подайте заявку з телефону.',
                 keyboard=keyboard[1],
                 min_api_version=6)
             viber.send_messages(viber_user.viber_id, [response_message])
