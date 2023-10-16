@@ -204,7 +204,7 @@ def message(request_dict):
             split_message_text = message_text.split('::')
             service_request = ServiceRequest.objects.get(number=split_message_text[1])
             my_request_assessment_handler(viber_user, service_request, split_message_text[3])
-        elif re.match(r'^service::\d{1,3}::location', message_text):
+        elif re.match(r'^service::\d{1,3}::location$', message_text):
             service = Service.objects.get(id = message_text.split('::')[1])
             keyboard = keyboards.service_1(service.parent.id)
             response_message = TextMessage(
