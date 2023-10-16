@@ -9,6 +9,8 @@ from django.core.management.base import BaseCommand
 
 from ...models import RabbitPackage
 
+start_time = time.time()
+
 # Версия пакета
 current_datetime = datetime.datetime.now()
 epoch_start = datetime.datetime(year=1, month=1, day=1, hour=0, minute=0)
@@ -54,8 +56,10 @@ class Command(BaseCommand):
         except KeyboardInterrupt:
             self.stdout.write(self.style.SUCCESS(f'Received {messages_consumed}. User interrupted. Exiting...'))
         finally:
-            self.stdout.write(self.style.SUCCESS(f'{current_datetime} Received {messages_consumed}'))
             connection.close()
+            end_time = time.time()
+            execution_time = end_time - start_time
+            self.stdout.write(self.style.SUCCESS(f'{current_datetime} Received {messages_consumed}. Time {execution_time}'))
 
 
 class CustomCreate:
