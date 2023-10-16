@@ -83,7 +83,7 @@ def start_menu(viber_user):
 
     buttons.append(button_img(6, 1, 'Послуги', f'{config.domain}/media/viber_bot_buttons/main_service.png', 'reply', 'service'))
     buttons.append(button_img(6, 1, 'Магазин', f'{config.domain}/media/viber_bot_buttons/main_market.png', 'open-url', 'https://market.104.ua/ua/'))
-    buttons.append(button_img(6, 1, 'Налаштування', f'{config.domain}/media/viber_bot_buttons/main_settings.png', 'reply', 'setting'))
+    buttons.append(button_img(6, 1, 'Налаштування', f'{config.domain}/{{ STATIC_URL }}/viber_bot_buttons/main_settings.png', 'reply', 'setting'))
     if viber_user.system_administrator:
         buttons.append(button_def('test', 'reply', 'test', config.colorBg_button))
 
