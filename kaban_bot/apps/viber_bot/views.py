@@ -165,7 +165,7 @@ def message(request_dict):
         elif re.match(r'^service::\d{1,2}$', message_text):
             save_menu(viber_user, message_text)
             service_1(viber_user, message_text.split('::')[1])
-        elif re.match(r'^service::\d{1,2}::location::\d{1,2}::(?:yes|no)$', message_text):
+        elif re.match(r'^service::\d{1,2}::location::\d{1,8}::(?:yes|no)$', message_text):
             save_menu(viber_user, message_text)
             verification_service_request(viber_user)
         elif message_text == 'my_requests':
@@ -209,7 +209,7 @@ def message(request_dict):
             service = Service.objects.get(id = message_text.split('::')[1])
             print(f"POSLE POISCOM SERVISA:{service}")
             keyboard = keyboards.service_1(service.parent.id)
-            print(f"POSLE keyboard SERVISA:{keyboard}")
+            print(f"POSLE keyboard SERVISA:{service.parent.id}")
             response_message = TextMessage(
                 text=f'Доступно лише з телефону.',
                 keyboard=keyboard,
