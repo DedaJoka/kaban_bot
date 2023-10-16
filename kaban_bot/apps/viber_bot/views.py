@@ -590,6 +590,7 @@ def verification_service_request(viber_user):
     if verification == "no":
         service_1(viber_user, service_id)
     elif verification == "yes":
+        print("ZASHLI V YES")
         today = date.today()
         start_date = datetime.combine(today, datetime.min.time())
         end_date = datetime.combine(today, datetime.max.time())
@@ -600,18 +601,21 @@ def verification_service_request(viber_user):
 
         number = 'VSR-' + formatted_today + str(count_service_request_created_today + 1)
 
+        print("PERED SOZDANIEM")
         position = Position.objects.get(id=position_id)
         service = Service.objects.get(id=service_id)
         service_request = ServiceRequest(number=number, customer=viber_user, address=viber_user.address, position=position, service=service, status_code=4)
         service_request.save()
-
+        print("POSLE SOZDANIYA")
         # ServiceRequestToRabbitMQ(service_request, 'INSERT')
 
+        print("PERED SEND")
         keyboard = keyboards.start()
         response_message = TextMessage(text=f'Ваша заявка створена!\nНомер заявки: {number}',
                                        keyboard=keyboard,
                                        min_api_version=6)
         viber.send_messages(viber_user.viber_id, [response_message])
+        print("POSLE SEND")
 
         service_request_handler(service_request)
 
