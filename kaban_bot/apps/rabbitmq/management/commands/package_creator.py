@@ -10,6 +10,7 @@ from django.core.management.base import BaseCommand
 from ...models import RabbitPackage
 
 # Версия пакета
+current_datetime = datetime.datetime.now()
 epoch_start = datetime.datetime(year=1, month=1, day=1, hour=0, minute=0)
 timestamp = int(time.time())
 timestamp_value = int((datetime.datetime.fromtimestamp(timestamp) - epoch_start).total_seconds() * 10000000)
@@ -55,7 +56,7 @@ class Command(BaseCommand):
         except KeyboardInterrupt:
             self.stdout.write(self.style.SUCCESS(f'Received {messages_consumed}. User interrupted. Exiting...'))
         finally:
-            self.stdout.write(self.style.SUCCESS(f'{datetime.now()} Received {messages_consumed}. Exiting...'))
+            self.stdout.write(self.style.SUCCESS(f'{current_datetime} Received {messages_consumed}. Exiting...'))
             connection.close()
 
 
