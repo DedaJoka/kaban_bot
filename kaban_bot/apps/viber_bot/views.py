@@ -153,7 +153,14 @@ def message(request_dict):
                 text=f'Для продовження скористайтесь контекстним меню.',
                 keyboard=keyboard,
                 min_api_version=6)
+
+            import time
+            start = time.time()
+
             viber.send_messages(viber_user.viber_id, [response_message])
+
+            print('!ELAPSED TIME!!! START', time.time() - start)
+
         elif message_text == 'setting':
             save_menu(viber_user, message_text)
             setting(viber_user)
