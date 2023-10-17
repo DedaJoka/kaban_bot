@@ -29,7 +29,7 @@ class Command(BaseCommand):
         messages_consumed = 0
 
         try:
-            while messages_consumed < 500:
+            while messages_consumed < 4000:
                 method_frame, header_frame, body = channel.basic_get(queue='q_broadcast_bot', auto_ack=True)
                 if body:
                     messages_consumed += 1
