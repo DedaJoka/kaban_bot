@@ -256,7 +256,7 @@ def start():
 def setting():
     buttons = []
     buttons.append(button_img(6, 1, 'Стати майстром', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/master.png', 'reply', "master_registration"))
-    buttons.append(button_img(6, 1, 'Змінити мову', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/language.png', 'reply', "change_language"))
+    # buttons.append(button_img(6, 1, 'Змінити мову', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/language.png', 'reply', "change_language"))
     buttons.append(button_img(6, 1, 'Змінити номер телефону', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/change_phone_number.png', 'reply', "change_phone_number"))
     buttons.append(button_img(6, 1, 'Назад', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/main_back.png', 'reply', "start"))
     keyboard = keyboard_def(buttons, "hidden")
@@ -271,11 +271,10 @@ def phone_number():
 
 def zero_to_five(text):
     buttons = []
-    buttons.append(button_img_text(1, 1, f'Бал', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/1x1/ff0d0d.png', 'reply', f"{text}::assessment"))
     buttons.append(button_img_text(1, 1, f'1', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/1x1/ff4e11.png', 'reply', f"{text}::1"))
     buttons.append(button_img_text(1, 1, f'2', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/1x1/ff8e15.png', 'reply', f"{text}::2"))
     buttons.append(button_img_text(1, 1, f'3', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/1x1/fab733.png', 'reply', f"{text}::3"))
     buttons.append(button_img_text(1, 1, f'4', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/1x1/acb334.png', 'reply', f"{text}::4"))
-    buttons.append(button_img_text(1, 1, f'5', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/1x1/69b34c.png', 'reply', f"{text}::5"))
+    buttons.append(button_img_text(2, 1, f'5', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/1x1/69b34c.png', 'reply', f"{text}::5"))
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard

@@ -324,7 +324,7 @@ def my_requests(viber_user):
     )
     text = ""
     if not service_requests:
-        text = "Від вас заявок не знайдено"
+        text = "Від Вас заявок не знайдено"
         keyboard = keyboards.service_0()
     else:
         keyboard = keyboards.my_requests(viber_user)
@@ -352,7 +352,7 @@ def my_request_handler(viber_user, service_request):
         executor = service_request.executors.first()
         keyboard = keyboards.my_request_confirmation(service_request)
         response_message = TextMessage(
-            text=f'На вашу заявку відгукнувся майстр {executor.full_name}\nРейтинг майстра: {executor.executor_rating}',
+            text=f'На Вашу заявку відгукнувся майстр {executor.full_name}\nРейтинг майстра: {executor.executor_rating}',
             keyboard=keyboard,
             min_api_version=6)
         viber.send_messages(viber_user.viber_id, [response_message])
@@ -503,7 +503,7 @@ def my_request_problem(viber_user, service_request):
 def my_request_assessment(viber_user, service_request):
     keyboard = keyboards.zero_to_five(f'my_request::{service_request.number}::assessment')
     response_message = TextMessage(
-        text=f'Оберіть оцінку від 0 до 5, де 0 - це найнижча оцінка, а 5 - найвища',
+        text=f'Оберіть оцінку від 1 до 5, де 1 - це найнижча оцінка, а 5 - найвища',
         keyboard=keyboard,
         min_api_version=6)
     viber.send_messages(viber_user.viber_id, [response_message])
@@ -516,10 +516,18 @@ def my_request_assessment_handler(viber_user, service_request, response):
 
     keyboard = keyboards.start_menu(viber_user)
     response_message = TextMessage(
-        text=f'Дякуємо за вашу оцінку.\nДля продовження скористайтесь контекстним меню.',
+        text=f'Дякуємо за Вашу оцінку.\nДля продовження скористайтесь контекстним меню.',
         keyboard=keyboard,
         min_api_version=6)
     viber.send_messages(viber_user.viber_id, [response_message])
+
+    executor = service_request.executors.first()
+    body = {
+        'viber_id': executor.viber_id,
+        'type_assessment': "executor",
+        'assessment': response,
+    }
+    new_package = CustomCreate.create_package(service_request.id, "INSERT", 'application/json', 'kvb::assessment', json.dumps(body))
 
 
 # Послуги
