@@ -61,7 +61,7 @@ class Command(BaseCommand):
             end_time = time.time()
             execution_time = end_time - start_time
             records_per_minute = (messages_consumed / execution_time) * 60
-            self.stdout.write(self.style.SUCCESS(f'{current_datetime} - {messages_consumed} received in {execution_time} seconds. Approximately {records_per_minute:.2f} per minute.'))
+            self.stdout.write(self.style.SUCCESS(f'{current_datetime} - {messages_consumed} received in {execution_time:.5f} seconds. Approximately {records_per_minute:.2f} per minute.'))
 
 class CustomCreate:
     def create_package(identifier, operation, contentType, type, body):
