@@ -1,16 +1,23 @@
+
 from ...models import RabbitPackage
 from viber_bot.models import Position
 from django.core.management.base import BaseCommand, CommandError
-import json
+from datetime import timedelta
+from django.utils import timezone
+from django.db.models import Q
 
 
 class Command(BaseCommand):
     help = 'Обробник пакетів'
 
     def handle(self, *args, **options):
-        print(f"Запустили команду package_cleaner")
 
-        packages = RabbitPackage.objects.filter(status_code='2').order_by('-priority', 'createdon')
+        three_days_ago = timezone.now() - timedelta(days=3)
+
+        status_filter = Q(status_code='2')
+        createdon_filter = Q(createdon__lte=three_days_ago)
+
+        packages = RabbitPackage.objects.filter(status_filter & createdon_filter).order_by('-priority', 'createdon')
 
         deleted_packages = 0
         for package in packages:
