@@ -27,7 +27,7 @@ class Command(BaseCommand):
         end_time = time.time()
         execution_time = end_time - start_time
         records_per_minute = (sent_messages / execution_time) * 60
-        self.stdout.write(self.style.SUCCESS(f'{current_datetime} - {sent_messages} sent in {execution_time} seconds. Approximately {records_per_minute:.2f} per minute.'))
+        self.stdout.write(self.style.SUCCESS(f'{current_datetime} - {sent_messages} sent in {execution_time:.5f} seconds. Approximately {records_per_minute:.2f} per minute.'))
 
 
 

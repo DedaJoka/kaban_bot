@@ -35,4 +35,4 @@ class Command(BaseCommand):
         end_time = time.time()
         execution_time = end_time - start_time
         records_per_minute = (deleted_packages / execution_time) * 60
-        self.stdout.write(self.style.SUCCESS(f'{current_datetime} - {deleted_packages} deleted in {execution_time} seconds. Approximately {records_per_minute:.2f} per minute.'))
+        self.stdout.write(self.style.SUCCESS(f'{current_datetime} - {deleted_packages} deleted in {execution_time:.5f} seconds. Approximately {records_per_minute:.2f} per minute.'))
