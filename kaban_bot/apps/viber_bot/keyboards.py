@@ -275,6 +275,6 @@ def zero_to_five(text):
     buttons.append(button_img_text(1, 1, f'2', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/1x1/ff8e15.png', 'reply', f"{text}::2"))
     buttons.append(button_img_text(1, 1, f'3', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/1x1/fab733.png', 'reply', f"{text}::3"))
     buttons.append(button_img_text(1, 1, f'4', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/1x1/acb334.png', 'reply', f"{text}::4"))
-    buttons.append(button_img_text(2, 1, f'5', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/2x1/69b34c.png', 'reply', f"{text}::5"))
+    buttons.append(button_img_text(2, 1, f'5', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/2x1/69b34c_1.png', 'reply', f"{text}::5"))
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
