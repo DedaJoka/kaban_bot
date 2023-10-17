@@ -23,7 +23,7 @@ class Command(BaseCommand):
             if package.status_code == 4:
                 sent_messages += 1
                 # self.stdout.write(self.style.SUCCESS(f'{package.type} - відправлено'))
-        self.stdout.write(self.style.SUCCESS(f'{current_datetime} Sending {sent_messages}'))
+        # self.stdout.write(self.style.SUCCESS(f'{current_datetime} Sending {sent_messages}'))
         end_time = time.time()
         execution_time = end_time - start_time
         records_per_minute = (sent_messages / execution_time) * 60
