@@ -80,11 +80,11 @@ def start_menu(viber_user):
     buttons = []
 
     if viber_user.executor:
-        buttons.append(button_img(6, 1, 'Заявки', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/master_requests.png', 'reply', 'master_requests'))
+        buttons.append(button_img(6, 1, 'Заявки', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/master_requests.png', 'reply', 'master_requests'))
 
-    buttons.append(button_img(6, 1, 'Послуги', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/main_service.png', 'reply', 'service'))
-    buttons.append(button_img(6, 1, 'Магазин', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/main_market.png', 'open-url', 'https://market.104.ua/ua/'))
-    buttons.append(button_img(6, 1, 'Налаштування', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/main_settings.png', 'reply', 'setting'))
+    buttons.append(button_img(6, 1, 'Послуги', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/main_service.png', 'reply', 'service'))
+    buttons.append(button_img(6, 1, 'Магазин', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/main_market.png', 'open-url', 'https://ecotherm.com.ua/'))
+    buttons.append(button_img(6, 1, 'Налаштування', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/main_settings.png', 'reply', 'setting'))
     if viber_user.system_administrator:
         buttons.append(button_def('test', 'reply', 'test', config.colorBg_button))
 
@@ -104,13 +104,13 @@ def master_requests(viber_user):
 
     service_requests = ServiceRequest.objects.filter(executors=viber_user, status_code=4)
     count_service_requests = len(service_requests)
-    buttons.append(button_img_text(6, 1, f'Доступні заявки ({count_service_requests})', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/6x1_blue.png', 'reply', 'master_service_requests_available'))
+    buttons.append(button_img_text(6, 1, f'Доступні заявки ({count_service_requests})', '#ffffff', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_blue.png', 'reply', 'master_service_requests_available'))
 
     confirmed_service_requests = ServiceRequest.objects.filter(executors=viber_user, status_code=6)
     count_confirmed_service_requests = len(confirmed_service_requests)
-    buttons.append(button_img_text(6, 1, f'Підтверджені заявки ({count_confirmed_service_requests})', '##1e1e1e', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/6x1_yellow.png', 'reply', 'master_service_requests_confirmed'))
+    buttons.append(button_img_text(6, 1, f'Підтверджені заявки ({count_confirmed_service_requests})', '##1e1e1e', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_yellow.png', 'reply', 'master_service_requests_confirmed'))
 
-    buttons.append(button_img_text(6, 1, f'До головного меню', '#1e1e1e', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/6x1_gray.png', 'reply', 'start'))
+    buttons.append(button_img_text(6, 1, f'До головного меню', '#1e1e1e', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_gray.png', 'reply', 'start'))
 
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
@@ -119,8 +119,8 @@ def master_requests(viber_user):
 def master_service_requests(prefix, service_requests):
     buttons = []
     for request in service_requests:
-        buttons.append(button_img_text(6, 1, f'{request.number}', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/6x1_blue.png', 'reply', f'master_service_request_{prefix}::{request.number}'))
-    buttons.append(button_img_text(6, 1, f'Назад', '#1e1e1e', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/6x1_gray.png', 'reply', f'master_requests'))
+        buttons.append(button_img_text(6, 1, f'{request.number}', '#ffffff', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_blue.png', 'reply', f'master_service_request_{prefix}::{request.number}'))
+    buttons.append(button_img_text(6, 1, f'Назад', '#1e1e1e', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_gray.png', 'reply', f'master_requests'))
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
 
@@ -128,11 +128,11 @@ def master_service_requests(prefix, service_requests):
 def master_service_request(prefix, service_request):
     buttons = []
     if prefix == 'available':
-        buttons.append(button_img_text(6, 1, f'Відгукнутися', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/6x1_blue.png', 'reply', f'master_service_request::{service_request.number}::respond'))
+        buttons.append(button_img_text(6, 1, f'Відгукнутися', '#ffffff', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_blue.png', 'reply', f'master_service_request::{service_request.number}::respond'))
     elif prefix == 'confirmed':
-        buttons.append(button_img_text(6, 1, f'Позначити як виконану', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/6x1_blue.png', 'reply', f'master_service_request::{service_request.number}::done'))
-        buttons.append(button_img_text(6, 1, f'Повідомити про проблему', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/6x1_blue.png', 'reply', f'master_service_request::{service_request.number}::problem'))
-    buttons.append(button_img_text(6, 1, f'Назад', '#1e1e1e', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/6x1_gray.png', 'reply', f'master_service_requests_{prefix}'))
+        buttons.append(button_img_text(6, 1, f'Позначити як виконану', '#ffffff', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_blue.png', 'reply', f'master_service_request::{service_request.number}::done'))
+        buttons.append(button_img_text(6, 1, f'Повідомити про проблему', '#ffffff', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_blue.png', 'reply', f'master_service_request::{service_request.number}::problem'))
+    buttons.append(button_img_text(6, 1, f'Назад', '#1e1e1e', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_gray.png', 'reply', f'master_service_requests_{prefix}'))
 
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
@@ -140,8 +140,8 @@ def master_service_request(prefix, service_request):
 # Погодження на реєстрацію для майстрів
 def master_registration(viber_id):
     buttons = []
-    buttons.append(button_img(6, 1, 'Погоджуюсь', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/agree.png', "open-url", f'{config.domain}/viber_bot/master_registration/{viber_id}'))
-    buttons.append(button_img(6, 1, 'До головного меню', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/main.png', 'reply', "start"))
+    buttons.append(button_img(6, 1, 'Погоджуюсь', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/agree.png', "open-url", f'{config.domain}/viber_bot/master_registration/{viber_id}'))
+    buttons.append(button_img(6, 1, 'До головного меню', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/main.png', 'reply', "start"))
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
 
@@ -157,8 +157,8 @@ def service_0():
     services = Service.objects.filter(parent__isnull=True).order_by('priority')
     for service in services:
         buttons.append(button_img(service.columns, service.rows, f"{service.name}", f"{config.domain}{service.image.url}", 'reply', f"service::{service.id}"))
-    buttons.append(button_img(6, 1, 'Мої заявки', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/my_requests.png', 'reply', "my_requests"))
-    buttons.append(button_img(6, 1, 'Назад', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/main_back.png', 'reply', "start"))
+    buttons.append(button_img(6, 1, 'Мої заявки', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/my_requests.png', 'reply', "my_requests"))
+    buttons.append(button_img(6, 1, 'Назад', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/main_back.png', 'reply', "start"))
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
 
@@ -173,17 +173,17 @@ def service_1(service_id):
             buttons.append(button_img(service.columns, service.rows, f"{service.name}", f"{config.domain}{service.image.url}", 'reply', f"service::{service.id}"))
         # Додавання кнопки "назад"
         if services[0].parent.parent:
-            buttons.append(button_img(6, 1, 'Назад', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/main_back.png', 'reply', f"service::{services[0].parent.parent.id}"))
+            buttons.append(button_img(6, 1, 'Назад', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/main_back.png', 'reply', f"service::{services[0].parent.parent.id}"))
         else:
-            buttons.append(button_img(6, 1, 'Назад', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/main_back.png', 'reply', "service"))
+            buttons.append(button_img(6, 1, 'Назад', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/main_back.png', 'reply', "service"))
     else:
         services = Service.objects.get(id=service_id)
         text = f'Ви обрали "{services}".\nНадайте місце, де буде відбуватися послуга.'
-        buttons.append(button_img(6, 1, 'Надати геолокацію', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/geolocation.png', "location-picker", f"service::{service_id}::location"))
+        buttons.append(button_img(6, 1, 'Надати геолокацію', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/geolocation.png', "location-picker", f"service::{service_id}::location"))
         if services.parent:
-            buttons.append(button_img(6, 1, 'Назад', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/main_back.png', 'reply', f"service::{services.parent.id}"))
+            buttons.append(button_img(6, 1, 'Назад', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/main_back.png', 'reply', f"service::{services.parent.id}"))
         else:
-            buttons.append(button_img(6, 1, 'Назад', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/main_back.png', 'reply', "service"))
+            buttons.append(button_img(6, 1, 'Назад', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/main_back.png', 'reply', "service"))
 
     keyboard = keyboard_def(buttons, "hidden")
     return text, keyboard
@@ -200,32 +200,32 @@ def my_requests(viber_user):
     )
 
     for request in service_requests:
-        buttons.append(button_img_text(6, 1, f'{request.number}', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/6x1_green.png', 'reply', f'my_request::{request.number}'))
-    buttons.append(button_img_text(6, 1, f'Назад', '#1e1e1e', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/6x1_gray.png', 'reply', 'service'))
+        buttons.append(button_img_text(6, 1, f'{request.number}', '#ffffff', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_green.png', 'reply', f'my_request::{request.number}'))
+    buttons.append(button_img_text(6, 1, f'Назад', '#1e1e1e', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_gray.png', 'reply', 'service'))
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
 
 def my_request_cancel(service_request):
     buttons = []
-    buttons.append(button_img_text(6, 1, f'Відмінити заявку', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/6x1_green.png', 'reply', f'my_request::{service_request.number}::cancel'))
-    buttons.append(button_img_text(6, 1, f'Назад', '#1e1e1e', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/6x1_gray.png', 'reply', f'my_requests'))
+    buttons.append(button_img_text(6, 1, f'Відмінити заявку', '#ffffff', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_green.png', 'reply', f'my_request::{service_request.number}::cancel'))
+    buttons.append(button_img_text(6, 1, f'Назад', '#1e1e1e', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_gray.png', 'reply', f'my_requests'))
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
 
 def my_request_confirmation(service_request):
     buttons = []
-    buttons.append(button_img_text(6, 1, f'Підтвердити майстра', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/6x1_green.png', 'reply', f'my_request::{service_request.number}::confirm'))
-    buttons.append(button_img_text(6, 1, f'Відхилити майстра', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/6x1_green.png', 'reply', f'my_request::{service_request.number}::reject'))
-    buttons.append(button_img_text(6, 1, f'Відмінити заявку', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/6x1_green.png', 'reply', f'my_request::{service_request.number}::cancel'))
-    buttons.append(button_img_text(6, 1, f'Назад', '#1e1e1e', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/6x1_gray.png', 'reply', f'my_requests'))
+    buttons.append(button_img_text(6, 1, f'Підтвердити майстра', '#ffffff', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_green.png', 'reply', f'my_request::{service_request.number}::confirm'))
+    buttons.append(button_img_text(6, 1, f'Відхилити майстра', '#ffffff', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_green.png', 'reply', f'my_request::{service_request.number}::reject'))
+    buttons.append(button_img_text(6, 1, f'Відмінити заявку', '#ffffff', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_green.png', 'reply', f'my_request::{service_request.number}::cancel'))
+    buttons.append(button_img_text(6, 1, f'Назад', '#1e1e1e', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_gray.png', 'reply', f'my_requests'))
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
 
 def my_request_done(service_request):
     buttons = []
-    buttons.append(button_img_text(6, 1, f'Оцінити майстра', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/6x1_green.png', 'reply', f'my_request::{service_request.number}::assessment'))
-    buttons.append(button_img_text(6, 1, f'Повідомити про проблему', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/6x1_green.png', 'reply', f'my_request::{service_request.number}::problem'))
-    buttons.append(button_img_text(6, 1, f'Назад', '#1e1e1e', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/6x1_gray.png', 'reply', f'my_requests'))
+    buttons.append(button_img_text(6, 1, f'Оцінити майстра', '#ffffff', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_green.png', 'reply', f'my_request::{service_request.number}::assessment'))
+    buttons.append(button_img_text(6, 1, f'Повідомити про проблему', '#ffffff', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_green.png', 'reply', f'my_request::{service_request.number}::problem'))
+    buttons.append(button_img_text(6, 1, f'Назад', '#1e1e1e', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_gray.png', 'reply', f'my_requests'))
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
 
@@ -238,8 +238,8 @@ def my_request_done(service_request):
 # "Так або Ні"
 def yes_no(text):
     buttons = []
-    buttons.append(button_img(3, 2, 'Ні', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/no.png', 'reply', f"{text}::no"))
-    buttons.append(button_img(3, 2, 'Так', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/yes.png', 'reply', f"{text}::yes"))
+    buttons.append(button_img(3, 2, 'Ні', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/no.png', 'reply', f"{text}::no"))
+    buttons.append(button_img(3, 2, 'Так', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/yes.png', 'reply', f"{text}::yes"))
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
 
@@ -247,7 +247,7 @@ def yes_no(text):
 # "До головного меню"
 def start():
     buttons = []
-    buttons.append(button_img(6, 1, 'До головного меню', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/main.png', 'reply', "start"))
+    buttons.append(button_img(6, 1, 'До головного меню', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/main.png', 'reply', "start"))
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
 
@@ -255,10 +255,10 @@ def start():
 # "Налаштування"
 def setting():
     buttons = []
-    buttons.append(button_img(6, 1, 'Стати майстром', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/master.png', 'reply', "master_registration"))
-    # buttons.append(button_img(6, 1, 'Змінити мову', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/language.png', 'reply', "change_language"))
-    buttons.append(button_img(6, 1, 'Змінити номер телефону', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/change_phone_number_1.png', 'reply', "change_phone_number"))
-    buttons.append(button_img(6, 1, 'Назад', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/main_back.png', 'reply', "start"))
+    buttons.append(button_img(6, 1, 'Стати майстром', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/master.png', 'reply', "master_registration"))
+    # buttons.append(button_img(6, 1, 'Змінити мову', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/language.png', 'reply', "change_language"))
+    buttons.append(button_img(6, 1, 'Змінити номер телефону', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/change_phone_number_1.png', 'reply', "change_phone_number"))
+    buttons.append(button_img(6, 1, 'Назад', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/main_back.png', 'reply', "start"))
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
 
@@ -271,10 +271,10 @@ def phone_number():
 
 def zero_to_five(text):
     buttons = []
-    buttons.append(button_img_text(1, 1, f'1', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/1x1/ff4e11.png', 'reply', f"{text}::1"))
-    buttons.append(button_img_text(1, 1, f'2', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/1x1/ff8e15.png', 'reply', f"{text}::2"))
-    buttons.append(button_img_text(1, 1, f'3', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/1x1/fab733.png', 'reply', f"{text}::3"))
-    buttons.append(button_img_text(1, 1, f'4', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/1x1/acb334.png', 'reply', f"{text}::4"))
-    buttons.append(button_img_text(2, 1, f'5', '#ffffff', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/2x1/69b34c_1.png', 'reply', f"{text}::5"))
+    buttons.append(button_img_text(1, 1, f'1', '#ffffff', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1/ff4e11.png', 'reply', f"{text}::1"))
+    buttons.append(button_img_text(1, 1, f'2', '#ffffff', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1/ff8e15.png', 'reply', f"{text}::2"))
+    buttons.append(button_img_text(1, 1, f'3', '#ffffff', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1/fab733.png', 'reply', f"{text}::3"))
+    buttons.append(button_img_text(1, 1, f'4', '#ffffff', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1/acb334.png', 'reply', f"{text}::4"))
+    buttons.append(button_img_text(2, 1, f'5', '#ffffff', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/2x1/69b34c_1.png', 'reply', f"{text}::5"))
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
