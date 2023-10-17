@@ -961,8 +961,11 @@ def setting(viber_user):
         text=f'Для продовження скористайтесь контекстним меню.',
         keyboard=keyboard,
         min_api_version=6)
-    viber.send_messages(viber_user.viber_id, [response_message])
 
+    import time
+    start = time.time()
+    viber.send_messages(viber_user.viber_id, [response_message])
+    print('!ELAPSED TIME!!! START', time.time() - start)
 
 # Функція записує меню у вайбер-користувача
 def save_menu(viber_user, menu):
