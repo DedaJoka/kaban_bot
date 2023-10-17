@@ -965,7 +965,7 @@ def setting(viber_user):
     import time
     start = time.time()
     viber.send_messages(viber_user.viber_id, [response_message])
-    print('!ELAPSED TIME!!! START', time.time() - start)
+    print('!ELAPSED TIME!!! SETTING', time.time() - start)
 
 # Функція записує меню у вайбер-користувача
 def save_menu(viber_user, menu):
