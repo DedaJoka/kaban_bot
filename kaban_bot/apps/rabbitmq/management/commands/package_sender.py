@@ -1,18 +1,19 @@
 import hashlib
 import pika
 import datetime
+import time
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-
 from ...models import RabbitPackage
-
-current_datetime = datetime.datetime.now()
 
 class Command(BaseCommand):
     help = 'Відправник пакетів'
 
     def handle(self, *args, **options):
+        start_time = time.time()
+        current_datetime = datetime.datetime.now()
+
         packages = RabbitPackage.objects.filter(direction='1', status_code='3').order_by('-priority', 'createdon')
 
         sent_messages = 0
@@ -23,6 +24,10 @@ class Command(BaseCommand):
                 sent_messages += 1
                 # self.stdout.write(self.style.SUCCESS(f'{package.type} - відправлено'))
         self.stdout.write(self.style.SUCCESS(f'{current_datetime} Sending {sent_messages}'))
+        end_time = time.time()
+        execution_time = end_time - start_time
+        records_per_minute = (sent_messages / execution_time) * 60
+        self.stdout.write(self.style.SUCCESS(f'{current_datetime} - {sent_messages} sent in {execution_time} seconds. Approximately {records_per_minute:.2f} per minute.'))
 
 
 

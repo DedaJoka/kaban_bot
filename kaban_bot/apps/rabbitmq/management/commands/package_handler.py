@@ -2,13 +2,16 @@ from ...models import RabbitPackage
 from viber_bot.models import Position, Service
 from django.core.management.base import BaseCommand, CommandError
 import json
+import time
+import datetime
 
 
 class Command(BaseCommand):
     help = 'Обробник пакетів'
 
     def handle(self, *args, **options):
-        print(f"Запустили команду package_handler")
+        start_time = time.time()
+        current_datetime = datetime.datetime.now()
 
         packages = RabbitPackage.objects.filter(direction='0', status_code='1').order_by('-priority', 'createdon')
 
@@ -17,17 +20,20 @@ class Command(BaseCommand):
             if packages_handled < 500:
                 handler(package)
 
-                if package.status_code == 2:
-                    self.stdout.write(self.style.SUCCESS(f'{package.type} - Оброблено'))
-                else:
-                    self.stdout.write(self.style.ERROR(f'{package.type} - Помилка'))
+                # if package.status_code == 2:
+                #     # self.stdout.write(self.style.SUCCESS(f'{package.type} - Оброблено'))
+                # else:
+                #     # self.stdout.write(self.style.ERROR(f'{package.type} - Помилка'))
 
                 packages_handled += 1
             else:
-                self.stdout.write(self.style.SUCCESS(f'Handled {packages_handled}. Exiting...'))
+                # self.stdout.write(self.style.SUCCESS(f'Handled {packages_handled}. Exiting...'))
                 break
-        if packages_handled < 500:
-            self.stdout.write(self.style.SUCCESS(f'Handled {packages_handled}. All packages handled. Exiting...'))
+
+        end_time = time.time()
+        execution_time = end_time - start_time
+        records_per_minute = (packages_handled / execution_time) * 60
+        self.stdout.write(self.style.SUCCESS(f'{current_datetime} - {packages_handled} handled in {execution_time} seconds. Approximately {records_per_minute:.2f} per minute.'))
 
 
 def handler(package):

@@ -3,16 +3,14 @@ import datetime
 import time
 import pika
 
-
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from ...models import RabbitPackage
 
-start_time = time.time()
 
 # Версия пакета
-current_datetime = datetime.datetime.now()
+
 epoch_start = datetime.datetime(year=1, month=1, day=1, hour=0, minute=0)
 timestamp = int(time.time())
 timestamp_value = int((datetime.datetime.fromtimestamp(timestamp) - epoch_start).total_seconds() * 10000000)
@@ -22,6 +20,9 @@ class Command(BaseCommand):
     help = 'Творець пакетів'
 
     def handle(self, *args, **options):
+        start_time = time.time()
+        current_datetime = datetime.datetime.now()
+
         connection = pika.BlockingConnection(pika.URLParameters(settings.RABBIT_CONNECTION_STR))
         channel = connection.channel()
         channel.queue_declare(queue='q_broadcast_bot', durable=True)
@@ -60,8 +61,7 @@ class Command(BaseCommand):
             end_time = time.time()
             execution_time = end_time - start_time
             records_per_minute = (messages_consumed / execution_time) * 60
-            self.stdout.write(self.style.SUCCESS(f'{current_datetime} Received {messages_consumed}. Time {execution_time}. Approximately {records_per_minute:.2f} records per minute.'))
-
+            self.stdout.write(self.style.SUCCESS(f'{current_datetime} - {messages_consumed} received in {execution_time} seconds. Approximately {records_per_minute:.2f} per minute.'))
 
 class CustomCreate:
     def create_package(identifier, operation, contentType, type, body):
