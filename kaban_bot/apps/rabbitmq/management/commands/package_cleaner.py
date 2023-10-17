@@ -8,7 +8,7 @@ from django.db.models import Q
 
 
 class Command(BaseCommand):
-    help = 'Обробник пакетів'
+    help = 'Чистка пакетів'
 
     def handle(self, *args, **options):
 

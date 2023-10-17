@@ -59,7 +59,8 @@ class Command(BaseCommand):
             connection.close()
             end_time = time.time()
             execution_time = end_time - start_time
-            self.stdout.write(self.style.SUCCESS(f'{current_datetime} Received {messages_consumed}. Time {execution_time}'))
+            records_per_minute = (messages_consumed / execution_time) * 60
+            self.stdout.write(self.style.SUCCESS(f'{current_datetime} Received {messages_consumed}. Time {execution_time}. Approximately {records_per_minute:.2f} records per minute.'))
 
 
 class CustomCreate:
