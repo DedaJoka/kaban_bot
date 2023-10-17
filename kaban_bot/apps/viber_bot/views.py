@@ -26,7 +26,9 @@ bot_configuration = BotConfiguration(
     avatar=config.AVATAR,
     auth_token=config.TOKEN
 )
-viber = Api(bot_configuration)
+# viber = Api(bot_configuration)
+from .custom_api import CustomApi
+viber = CustomApi(bot_configuration)
 
 
 @csrf_exempt
