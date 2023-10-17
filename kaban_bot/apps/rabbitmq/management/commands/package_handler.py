@@ -17,7 +17,7 @@ class Command(BaseCommand):
 
         packages_handled = 0
         for package in packages:
-            if packages_handled < 500:
+            if packages_handled < 5000:
                 handler(package)
 
                 # if package.status_code == 2:
