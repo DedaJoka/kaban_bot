@@ -27,7 +27,7 @@ bot_configuration = BotConfiguration(
     auth_token=config.TOKEN
 )
 # viber = Api(bot_configuration)
-from .custom_api import CustomApi
+from ..custom_api import CustomApi
 viber = CustomApi(bot_configuration)
 
 
