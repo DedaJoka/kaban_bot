@@ -257,7 +257,7 @@ def setting():
     buttons = []
     buttons.append(button_img(6, 1, 'Стати майстром', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/master.png', 'reply', "master_registration"))
     # buttons.append(button_img(6, 1, 'Змінити мову', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/language.png', 'reply', "change_language"))
-    buttons.append(button_img(6, 1, 'Змінити номер телефону', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/change_phone_number.png', 'reply', "change_phone_number"))
+    buttons.append(button_img(6, 1, 'Змінити номер телефону', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/change_phone_number_1.png', 'reply', "change_phone_number"))
     buttons.append(button_img(6, 1, 'Назад', f'{config.domain}/{settings.STATIC_URL}/viber_bot_buttons/main_back.png', 'reply', "start"))
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
