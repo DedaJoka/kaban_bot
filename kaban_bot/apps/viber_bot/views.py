@@ -277,14 +277,18 @@ def conversation_started(request_dict):
         viber_user = ViberUser(viber_id=viber_id, menu='registration')
         viber_user.save()
         response_message = TextMessage(
-            text='Привітальне слово + короткий опис функціоналу\nВведіть Ваше прізвище, ім’я, по батькові у називному відмінку',
+            text='Вітаємо Вас!\nДаний бот допоможе принести у Вашу оселю ще більше тепла та затишку. Всі майстри кваліфіковані, мають необхідні сертифікації та індивідуальний підхід до кожного клієнта. Ви зможете замовити будь-яку існуючу послугу без зайвих турбот та всього у пару кліків. Вперед до змін!',
+            min_api_version=4)
+        viber.send_messages(viber_id, [response_message])
+        response_message = TextMessage(
+            text='Для проходження реєстрації введіть Ваше прізвище, ім’я, по батькові у називному відмінку.',
             min_api_version=4)
         viber.send_messages(viber_id, [response_message])
     else:
         viber_user = ViberUser.objects.get(viber_id=viber_id)
         keyboard = keyboards.start_menu(viber_user)
         response_message = TextMessage(
-            text=f'Привітальне слово + короткий опис функціоналу\nВітаємо {viber_user.full_name}. Для продовження скористайтесь контекстним меню.',
+            text=f'З поверненням {viber_user.full_name}!\nДаний бот допоможе принести у Вашу оселю ще більше тепла та затишку. Всі майстри кваліфіковані, мають необхідні сертифікації та індивідуальний підхід до кожного клієнта. Ви зможете замовити будь-яку існуючу послугу без зайвих турбот та всього у пару кліків. Вперед до змін!',
             keyboard=keyboard,
             min_api_version=6)
         viber.send_messages(viber_id, [response_message])
