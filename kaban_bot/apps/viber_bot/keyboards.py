@@ -258,7 +258,7 @@ def location_manual_picker(positions, text):
     for position in sorted_tree_queryset:
         if position.parent:
             buttons.append(button_img_text(6, 1,
-                                           f'<font size=19><b>{position.name}</b></font><font size=13>\n<b>{position.parent} громада</b></font>', '#ffffff',
+                                           f'<font size=19><b>{position.name}</b></font><font size=13><br><b>{position.parent} громада</b></font>', '#ffffff',
                                            f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_green.png',
                                            'reply', f"{text}::{position.id}"))
         else:
