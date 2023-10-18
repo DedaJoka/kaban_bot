@@ -11,3 +11,4 @@ gunicorn==21.2.0
 certifi==2022.9.24
 pytz==2023.3
 django-crontab==0.7.1
+pyuca==1.2
