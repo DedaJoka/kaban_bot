@@ -257,13 +257,8 @@ def location_manual_picker(positions, text):
 
     for position in sorted_tree_queryset:
         if position.parent:
-            # buttons.append(button_img_text(6, 1,
-            #                                f'<font size=13><b>{position.name}</b></font><font size=13><br><b>{position.parent} громада</b></font>', '#ffffff',
-            #                                f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_green.png',
-            #                                'reply', f"{text}::{position.id}"))
             buttons.append(button_img_text(6, 1,
-                                           f'&lt;font size=&quot;19&quot; color=&quot;#FFFFFF&quot;&gt;&lt;b&gt;КЕРУВАННЯ РАХУНКАМИ&lt;br&gt;&lt;font size=&quot;13&quot;&gt;додавання/видалення, квитанції, і т.д.&lt;/font&gt;&lt;/b&gt;&lt;/font&gt;',
-                                           '#ffffff',
+                                           f'<font size=13><b>{position.name}</b></font><font size=13><br><b>{position.parent} громада</b></font>', '#ffffff',
                                            f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_green.png',
                                            'reply', f"{text}::{position.id}"))
         else:
