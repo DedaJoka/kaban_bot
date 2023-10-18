@@ -19,6 +19,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, redirect
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
+from django.db.models.functions import Left
+from pyuca import Collator
+
 
 # Create your views here.
 bot_configuration = BotConfiguration(
@@ -29,7 +32,7 @@ bot_configuration = BotConfiguration(
 # viber = Api(bot_configuration)
 from kaban_bot.apps.custom_api import CustomApi
 viber = CustomApi(bot_configuration)
-
+collator = Collator()
 
 @csrf_exempt
 def incoming(request):
@@ -153,14 +156,7 @@ def message(request_dict):
                 text=f'Для продовження скористайтесь контекстним меню.',
                 keyboard=keyboard,
                 min_api_version=6)
-
-            import time
-            start = time.time()
-
             viber.send_messages(viber_user.viber_id, [response_message])
-
-            print('!ELAPSED TIME!!! START', time.time() - start)
-
         elif message_text == 'setting':
             save_menu(viber_user, message_text)
             setting(viber_user)
@@ -170,6 +166,42 @@ def message(request_dict):
         elif re.match(r'^service::\d{1,2}$', message_text):
             save_menu(viber_user, message_text)
             service_1(viber_user, message_text.split('::')[1])
+        elif re.match(r'^service::\d{1,3}::location_manual$', message_text):
+            unique_initials = Position.objects.filter(type_code='O').annotate(initial=Left('name', 1)).order_by('initial').values_list('initial', flat=True).distinct()
+            keyboard = keyboards.location_manual(unique_initials, message_text)
+            response_message = TextMessage(
+                text=f'Оберіть букву з якої починається Ваша область.',
+                keyboard=keyboard,
+                min_api_version=6)
+            viber.send_messages(viber_user.viber_id, [response_message])
+        elif re.match(r'^service::\d{1,3}::location_manual::(\w)$', message_text):
+            positions = Position.objects.filter(name__startswith=f'{message_text.split("::")[3]}', type_code='O')
+            keyboard = keyboards.location_manual_picker(positions, message_text)
+            response_message = TextMessage(
+                text=f'Оберіть Вашу область.',
+                keyboard=keyboard,
+                min_api_version=6)
+            viber.send_messages(viber_user.viber_id, [response_message])
+        elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}$', message_text):
+            region = Position.objects.get(id=message_text.split('::')[4])
+            positions_filter = Q(type_code='M') | Q(type_code='T') | Q(type_code='C') | Q(type_code='X')
+            unique_initials = region.get_descendants().filter(positions_filter).annotate(initial=Left('name', 1)).order_by('initial').values_list('initial', flat=True).distinct()
+            keyboard = keyboards.location_manual(unique_initials, message_text)
+            response_message = TextMessage(
+                text=f'Оберіть букву з якої починається Ваш населений пункт.',
+                keyboard=keyboard,
+                min_api_version=6)
+            viber.send_messages(viber_user.viber_id, [response_message])
+        elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)$', message_text):
+            region = Position.objects.get(id=message_text.split('::')[4])
+            positions_filter = (Q(type_code='M') | Q(type_code='T') | Q(type_code='C') | Q(type_code='X')) & Q(name__startswith=message_text.split("::")[5])
+            positions = region.get_descendants().filter(positions_filter)
+            keyboard = keyboards.location_manual_picker(positions, message_text)
+            response_message = TextMessage(
+                text=f'Оберіть Ваш населений пунк.',
+                keyboard=keyboard,
+                min_api_version=6)
+            viber.send_messages(viber_user.viber_id, [response_message])
         elif re.match(r'^service::\d{1,2}::location::\d{1,8}::(?:yes|no)$', message_text):
             save_menu(viber_user, message_text)
             verification_service_request(viber_user)
@@ -263,8 +295,7 @@ def message(request_dict):
 
         # Адмін
         elif message_text == 'test':
-            service_request = ServiceRequest.objects.get(number='VSR-2023-09-21-1')
-            ServiceRequestToRabbitMQ(service_request, 'INSERT')
+            test(viber_user)
     elif message_type == 'location':
         if re.match(r'^service::\d{1,2}::location$', message_text):
             lat = request_dict['message']['location']['lat']
@@ -961,13 +992,24 @@ def setting(viber_user):
         text=f'Для продовження скористайтесь контекстним меню.',
         keyboard=keyboard,
         min_api_version=6)
-
-    import time
-    start = time.time()
     viber.send_messages(viber_user.viber_id, [response_message])
-    print('!ELAPSED TIME!!! SETTING', time.time() - start)
 
 # Функція записує меню у вайбер-користувача
 def save_menu(viber_user, menu):
     viber_user.menu = menu
     viber_user.save()
+
+
+
+def test(viber_user):
+    print("test")
+    bukva = "А"
+
+    unique_initials = Position.objects.filter(type_code='O').annotate(initial=Left('name', 1)).order_by('initial').values_list('initial', flat=True).distinct()
+
+    keyboard = keyboards.location_manual(unique_initials, 'test2')
+    response_message = TextMessage(
+        text=f'Для продовження скористайтесь контекстним меню.',
+        keyboard=keyboard,
+        min_api_version=6)
+    viber.send_messages(viber_user.viber_id, [response_message])

@@ -6,6 +6,9 @@ from . import config
 from django.conf import settings
 from .models import ViberUser, Service, ServiceRequest
 from django.db.models import F, Q
+from pyuca import Collator
+
+collator = Collator()
 
 
 def button_def(text, actiontype, actionbody, bgcolor):
@@ -178,8 +181,9 @@ def service_1(service_id):
             buttons.append(button_img(6, 1, 'Назад', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/main_back.png', 'reply', "service"))
     else:
         services = Service.objects.get(id=service_id)
-        text = f'Ви обрали "{services}".\nНадайте місце, де буде відбуватися послуга.'
+        text = f'Ви обрали "{services}".\nНадайте місце, де буде відбуватися послуга. Ви можете надати свою геолокацію або ввести адресу по єтапно.'
         buttons.append(button_img(6, 1, 'Надати геолокацію', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/geolocation.png', "location-picker", f"service::{service_id}::location"))
+        buttons.append(button_img(6, 1, 'Ручний ввод', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/geolocation.png', "reply", f"service::{service_id}::location_manual"))
         if services.parent:
             buttons.append(button_img(6, 1, 'Назад', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/main_back.png', 'reply', f"service::{services.parent.id}"))
         else:
@@ -229,10 +233,42 @@ def my_request_done(service_request):
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
 
+def location_manual(unique_initials, text):
+    buttons = []
+    unique_initials_count = unique_initials.count()
+    sorted_unique_initials = sorted(unique_initials, key=collator.sort_key)
+    if unique_initials_count:
+        for unique_initial in sorted_unique_initials:
+            buttons.append(button_img_text(1, 1, unique_initial, '#ffffff', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1/69b34c.png', 'reply', f"{text}::{unique_initial}"))
 
+        text_split = text.split("::")
+        back_result = "::".join(text_split[:-1])
 
+        buttons.append(button_img(6, 1, 'Назад', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/main_back.png', 'reply', f'{back_result}'))
 
+    keyboard = keyboard_def(buttons, "hidden")
+    return keyboard
 
+def location_manual_picker(positions, text):
+    buttons = []
+    positions_count = positions.count()
+    print(positions_count)
+    sorted_tree_queryset = sorted(positions, key=lambda x: collator.sort_key(x.name))
+
+    for position in sorted_tree_queryset:
+        if position.parent:
+            buttons.append(button_img_text(6, 1,
+                                           f'<font size=19><b>{position.name}</b></font><font size=13>\n<b>{position.parent} громада</b></font>', '#ffffff',
+                                           f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_green.png',
+                                           'reply', f"{text}::{position.id}"))
+        else:
+            buttons.append(button_img_text(6, 1, position.name, '#ffffff', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_green.png', 'reply', f"{text}::{position.id}"))
+
+    text_split = text.split("::")
+    back_result = "::".join(text_split[:-1])
+    buttons.append(button_img(6, 1, 'Назад', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/main_back.png', 'reply', f'{back_result}'))
+    keyboard = keyboard_def(buttons, "hidden")
+    return keyboard
 
 
 # "Так або Ні"
