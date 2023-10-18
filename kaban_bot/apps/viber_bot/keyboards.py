@@ -183,7 +183,7 @@ def service_1(service_id):
         services = Service.objects.get(id=service_id)
         text = f'Ви обрали "{services}".\nНадайте місце, де буде відбуватися послуга. Ви можете надати свою геолокацію або ввести адресу по єтапно.'
         buttons.append(button_img(6, 1, 'Надати геолокацію', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/geolocation.png', "location-picker", f"service::{service_id}::location"))
-        buttons.append(button_img(6, 1, 'Ручний ввод', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/geolocation.png', "reply", f"service::{service_id}::location_manual"))
+        buttons.append(button_img(6, 1, 'Вказати власноруч', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/geolocation_manual.png', "reply", f"service::{service_id}::location_manual"))
         if services.parent:
             buttons.append(button_img(6, 1, 'Назад', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/main_back.png', 'reply', f"service::{services.parent.id}"))
         else:
