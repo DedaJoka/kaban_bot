@@ -1003,13 +1003,16 @@ def save_menu(viber_user, menu):
 
 def test(viber_user):
     print("test")
-    bukva = "А"
+    import xml.etree.ElementTree as ET
+    import html
 
-    unique_initials = Position.objects.filter(type_code='O').annotate(initial=Left('name', 1)).order_by('initial').values_list('initial', flat=True).distinct()
+    xml_string = '<add key="keyboardButtonTextAccounts[ua]" value="&lt;font size=&quot;19&quot; color=&quot;#FFFFFF&quot;&gt;&lt;b&gt;КЕРУВАННЯ РАХУНКАМИ&lt;br&gt;&lt;font size=&quot;13&quot;&gt;додавання/видалення, квитанції, і т.д.&lt;/font&gt;&lt;/b&gt;&lt;/font&gt;" />'
 
-    keyboard = keyboards.location_manual(unique_initials, 'test2')
-    response_message = TextMessage(
-        text=f'Для продовження скористайтесь контекстним меню.',
-        keyboard=keyboard,
-        min_api_version=6)
-    viber.send_messages(viber_user.viber_id, [response_message])
+    # Разбор XML-строки
+    root = ET.fromstring(xml_string)
+
+    # Получение значения атрибута "value" и декодирование HTML-сущностей
+    value = root.get('value')
+    decoded_value = html.unescape(value)
+
+    print(decoded_value)
