@@ -168,7 +168,7 @@ def message(request_dict):
             service_1(viber_user, message_text.split('::')[1])
         elif re.match(r'^service::\d{1,3}::location_manual$', message_text):
             unique_initials = Position.objects.filter(type_code='O').annotate(initial=Left('name', 1)).order_by('initial').values_list('initial', flat=True).distinct()
-            keyboard = keyboards.location_manual(unique_initials, message_text)
+            keyboard = keyboards.location_region_startswith(unique_initials, message_text)
             response_message = TextMessage(
                 text=f'Оберіть букву з якої починається Ваша область.',
                 keyboard=keyboard,
@@ -176,29 +176,29 @@ def message(request_dict):
             viber.send_messages(viber_user.viber_id, [response_message])
         elif re.match(r'^service::\d{1,3}::location_manual::(\w)$', message_text):
             positions = Position.objects.filter(name__startswith=f'{message_text.split("::")[3]}', type_code='O')
-            keyboard = keyboards.location_manual_picker(positions, message_text)
+            keyboard = keyboards.location_region_picker(positions, message_text)
             response_message = TextMessage(
                 text=f'Оберіть Вашу область.',
                 keyboard=keyboard,
                 min_api_version=6)
             viber.send_messages(viber_user.viber_id, [response_message])
-        elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}$', message_text):
+        elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,3}$', message_text):
             region = Position.objects.get(id=message_text.split('::')[4])
             positions_filter = Q(type_code='M') | Q(type_code='T') | Q(type_code='C') | Q(type_code='X')
             unique_initials = region.get_descendants().filter(positions_filter).annotate(initial=Left('name', 1)).order_by('initial').values_list('initial', flat=True).distinct()
-            keyboard = keyboards.location_manual(unique_initials, message_text)
+            keyboard = keyboards.location_populated_centre_startswith(unique_initials, message_text)
             response_message = TextMessage(
                 text=f'Оберіть букву з якої починається Ваш населений пункт.',
                 keyboard=keyboard,
                 min_api_version=6)
             viber.send_messages(viber_user.viber_id, [response_message])
-        elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)$', message_text):
+        elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}$', message_text):
             region = Position.objects.get(id=message_text.split('::')[4])
             positions_filter = (Q(type_code='M') | Q(type_code='T') | Q(type_code='C') | Q(type_code='X')) & Q(name__startswith=message_text.split("::")[5])
             positions = region.get_descendants().filter(positions_filter)
-            keyboard = keyboards.location_manual_picker(positions, message_text)
+            keyboard = keyboards.location_populated_centre_picker(positions, message_text)
             response_message = TextMessage(
-                text=f'Оберіть Ваш населений пунк.',
+                text=f'Оберіть Ваш населений пунк',
                 keyboard=keyboard,
                 min_api_version=6)
             viber.send_messages(viber_user.viber_id, [response_message])
@@ -1003,16 +1003,3 @@ def save_menu(viber_user, menu):
 
 def test(viber_user):
     print("test")
-    import xml.etree.ElementTree as ET
-    import html
-
-    xml_string = '<add key="keyboardButtonTextAccounts[ua]" value="&lt;font size=&quot;19&quot; color=&quot;#FFFFFF&quot;&gt;&lt;b&gt;КЕРУВАННЯ РАХУНКАМИ&lt;br&gt;&lt;font size=&quot;13&quot;&gt;додавання/видалення, квитанції, і т.д.&lt;/font&gt;&lt;/b&gt;&lt;/font&gt;" />'
-
-    # Разбор XML-строки
-    root = ET.fromstring(xml_string)
-
-    # Получение значения атрибута "value" и декодирование HTML-сущностей
-    value = root.get('value')
-    decoded_value = html.unescape(value)
-
-    print(decoded_value)
