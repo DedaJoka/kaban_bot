@@ -448,7 +448,7 @@ def location_populated_centre_picker(positions, message_text):
     if page.has_previous():
         buttons.append(button(6, 1,  # Columns & Rows
                               # text
-                              f'<font size=22 color="#FFFFFF"><b>⬅ Попередня сторінка</b></font>',
+                              f'<font size=22 color="#FFFFFF"><b>◀ Попередня сторінка</b></font>',
                               # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
                               f'',
                               # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
@@ -476,7 +476,7 @@ def location_populated_centre_picker(positions, message_text):
     if page.has_next():
         buttons.append(button(6, 1,  # Columns & Rows
                               # text
-                              f'<font size=22 color="#FFFFFF"><b>Наступна сторінка ➡</b></font>',
+                              f'<font size=22 color="#FFFFFF"><b>Наступна сторінка ▶</b></font>',
                               # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
                               f'',
                               # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
