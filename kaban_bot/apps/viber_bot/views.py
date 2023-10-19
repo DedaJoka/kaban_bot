@@ -71,7 +71,7 @@ def message(request_dict):
     viber_id = request_dict['sender']['id']
     viber_user = ViberUser.objects.get(viber_id=viber_id)
 
-    if viber_user.menu == 'phone_number':
+    if viber_user.menu == 'phone_number' and message_text != 'setting':
         message_text = 'phone_number::' + message_text
 
     print(f'\n\nmessage_type = {message_type}\nmessage_text = {message_text}\n\n')
@@ -83,7 +83,7 @@ def message(request_dict):
         # Проверка номера телефона и требование его
         elif not viber_user.phone_number and not re.match(r'^phone_number::', message_text):
             save_menu(viber_user, "phone_number")
-            keyboard = keyboards.phone_number()
+            keyboard = keyboards.phone_number(viber_user)
             response_message = TextMessage(
                 text="Для продовження необхідно пройти авторизацію. Для цього поділіться номером телефону, котрий прив'язаний до вайберу, або введіть Ваш контактний номер телефону\nФормат: +380ХХХХХХХХХ або 0ХХХХХХХХХ",
                 keyboard=keyboard,
@@ -116,7 +116,7 @@ def message(request_dict):
 
             elif split_message_text[2] == 'no':
                 save_menu(viber_user, "phone_number")
-                keyboard = keyboards.phone_number()
+                keyboard = keyboards.phone_number(viber_user)
                 response_message = TextMessage(
                     text="Для продовження необхідно пройти авторизацію. Для цього поділіться номером телефону, котрий прив'язаний до вайберу, або введіть Ваш контактний номер телефону\nФормат: +380ХХХХХХХХХ або 0ХХХХХХХХХ",
                     keyboard=keyboard,
@@ -124,7 +124,7 @@ def message(request_dict):
                 viber.send_messages(viber_user.viber_id, [response_message])
         elif re.match(r'^phone_number::', message_text):
             save_menu(viber_user, "phone_number")
-            keyboard = keyboards.phone_number()
+            keyboard = keyboards.phone_number(viber_user)
             response_message = TextMessage(
                 text="Невірний формат!\nФормат: +380ХХХХХХХХХ або 0ХХХХХХХХХ",
                 keyboard=keyboard,
@@ -141,7 +141,7 @@ def message(request_dict):
             split_message_text = message_text.split('::')
             if split_message_text[1] == 'yes':
                 save_menu(viber_user, "phone_number")
-                keyboard = keyboards.phone_number()
+                keyboard = keyboards.phone_number(viber_user)
                 response_message = TextMessage(
                     text="Надайте новий номер телефону. Для цього поділіться номером телефону, котрий прив'язаний до вайберу, або введіть Ваш контактний номер телефону\nФормат: +380ХХХХХХХХХ або 0ХХХХХХХХХ",
                     keyboard=keyboard,
@@ -341,7 +341,7 @@ def registration(message_text, viber_user):
     viber_user.full_name = message_text
     viber_user.save()
     save_menu(viber_user, "phone_number")
-    keyboard = keyboards.phone_number()
+    keyboard = keyboards.phone_number(viber_user)
     response_message = TextMessage(
         text="Для продовження необхідно пройти авторизацію. Для цього поділіться номером телефону, котрий прив'язаний до вайберу, або введіть Ваш контактний номер телефону\nФормат: +380ХХХХХХХХХ або 0ХХХХХХХХХ",
         keyboard=keyboard,

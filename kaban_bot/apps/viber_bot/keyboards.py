@@ -295,9 +295,12 @@ def setting():
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
 
-def phone_number():
+def phone_number(viber_user):
     buttons = []
-    buttons.append(button_def("Поділитися телефоном", "share-phone", "share_phone", config.colorBg_button))
+    buttons.append(button_def("Надіслати номер", "share-phone", "share_phone", config.colorBg_button))
+    if viber_user.phone_number:
+        buttons.append(button_img(6, 1, 'Назад', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/main_back.png', 'reply', f'setting'))
+
     keyboard = keyboard_def(buttons, "regular")
     return keyboard
 
