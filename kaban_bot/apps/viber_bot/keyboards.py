@@ -446,13 +446,23 @@ def location_populated_centre_picker(positions, message_text):
     message_text_without_page = "::".join(message_text_split[:-1])
 
     if page.has_previous():
-        buttons.append(button(6, 1,  # Columns & Rows
-                              # text
+        buttons.append(button(2, 1,  # Columns & Rows
+                              f'<font size=22 color="#FFFFFF"><b>◀◀</b></font>',
+                              # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
+                              f'',
+                              # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
+                              f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/2x1/green.png',
+                              # actiontype - ТИП ОТВЕТА
+                              'reply',
+                              # actionbody - ОТВЕТ
+                              f"{message_text_without_page}::1"
+                              ))
+        buttons.append(button(4, 1,  # Columns & Rows
                               f'<font size=22 color="#FFFFFF"><b>◀ Попередня сторінка</b></font>',
                               # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
                               f'',
                               # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
-                              f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_green.png',
+                              f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/4x1/green.png',
                               # actiontype - ТИП ОТВЕТА
                               'reply',
                               # actionbody - ОТВЕТ
@@ -474,22 +484,31 @@ def location_populated_centre_picker(positions, message_text):
                               ))
 
     if page.has_next():
-        buttons.append(button(6, 1,  # Columns & Rows
-                              # text
+        buttons.append(button(4, 1,  # Columns & Rows
                               f'<font size=22 color="#FFFFFF"><b>Наступна сторінка ▶</b></font>',
                               # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
                               f'',
                               # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
-                              f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_green.png',
+                              f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/4x1/green.png',
                               # actiontype - ТИП ОТВЕТА
                               'reply',
                               # actionbody - ОТВЕТ
                               f"{message_text_without_page}::{page.next_page_number()}"
                               ))
+        buttons.append(button(2, 1,  # Columns & Rows
+                              f'<font size=22 color="#FFFFFF"><b>▶▶</b></font>',
+                              # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
+                              f'',
+                              # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
+                              f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/2x1/green.png',
+                              # actiontype - ТИП ОТВЕТА
+                              'reply',
+                              # actionbody - ОТВЕТ
+                              f"{message_text_without_page}::{p.num_pages}"
+                              ))
 
     back_result = "::".join(message_text_split[:-2])
     buttons.append(button(6, 1,  # Columns & Rows
-                          # text
                           f'<font size=22 color="#404040"><b>Назад</b></font>',
                           # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
                           f'',

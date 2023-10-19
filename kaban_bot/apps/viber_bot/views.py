@@ -36,34 +36,31 @@ collator = Collator()
 
 @csrf_exempt
 def incoming(request):
+    # Отримуємо тіло запиту
     request_body = request.body
-    try:
+    if not request_body:
+        # Якщо тіло порожнє - повертаємо помилку
+        return HttpResponseBadRequest('Пусте тіло запиту')
+
+    # Декодуємо тіло запиту з JSON в python dict
+    request_dict = json.loads(request.body.decode('utf-8'))
+    event = request_dict['event']
+
+    # Обробка івентів
+    if (event == 'webhook' or event == 'unsubscribed' or event == 'delivered' or event == 'seen'):
         return HttpResponse(status=200)
-    finally:
-        # Отримуємо тіло запиту
-        if not request_body:
-            # Якщо тіло порожнє - повертаємо помилку
-            return HttpResponseBadRequest('Пусте тіло запиту')
-
-        # Декодуємо тіло запиту з JSON в python dict
-        request_dict = json.loads(request.body.decode('utf-8'))
-        event = request_dict['event']
-
-        # Обробка івентів
-        if (event == 'webhook' or event == 'unsubscribed' or event == 'delivered' or event == 'seen'):
-            return HttpResponse(status=200)
-        elif event == 'subscribed':
-            conversation_started(request_dict)
-            return HttpResponse(status=200)
-        elif event == 'conversation_started':
-            conversation_started(request_dict)
-            return HttpResponse(status=200)
-        elif event == 'message':
-            message(request_dict)
-            return HttpResponse(status=200)
-        else:
-            print(f'Undeclared event: {event}')
-            return HttpResponseBadRequest(f'Undeclared event: {event}')
+    elif event == 'subscribed':
+        conversation_started(request_dict)
+        return HttpResponse(status=200)
+    elif event == 'conversation_started':
+        conversation_started(request_dict)
+        return HttpResponse(status=200)
+    elif event == 'message':
+        message(request_dict)
+        return HttpResponse(status=200)
+    else:
+        print(f'Undeclared event: {event}')
+        return HttpResponseBadRequest(f'Undeclared event: {event}')
 
 
 # Функція обробки event == 'message'
