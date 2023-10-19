@@ -170,7 +170,7 @@ def message(request_dict):
             unique_initials = Position.objects.filter(type_code='O').annotate(initial=Left('name', 1)).order_by('initial').values_list('initial', flat=True).distinct()
             keyboard = keyboards.location_region_startswith(unique_initials, message_text)
             response_message = TextMessage(
-                text=f'Оберіть букву з якої починається Ваша область.',
+                text=f'Оберіть букву, з якої починається Ваша область.',
                 keyboard=keyboard,
                 min_api_version=6)
             viber.send_messages(viber_user.viber_id, [response_message])
@@ -188,7 +188,7 @@ def message(request_dict):
             unique_initials = region.get_descendants().filter(positions_filter).annotate(initial=Left('name', 1)).order_by('initial').values_list('initial', flat=True).distinct()
             keyboard = keyboards.location_populated_centre_startswith(unique_initials, message_text)
             response_message = TextMessage(
-                text=f'Оберіть букву з якої починається Ваш населений пункт.',
+                text=f'Оберіть букву, з якої починається Ваш населений пункт.',
                 keyboard=keyboard,
                 min_api_version=6)
             viber.send_messages(viber_user.viber_id, [response_message])
@@ -198,7 +198,7 @@ def message(request_dict):
             positions = region.get_descendants().filter(positions_filter)
             keyboard = keyboards.location_populated_centre_picker(positions, message_text)
             response_message = TextMessage(
-                text=f'Оберіть Ваш населений пунк',
+                text=f'Оберіть Ваш населений пункт',
                 keyboard=keyboard,
                 min_api_version=6)
             viber.send_messages(viber_user.viber_id, [response_message])
