@@ -22,7 +22,6 @@ from django.core.files.base import ContentFile
 from django.db.models.functions import Left
 from pyuca import Collator
 
-
 # Create your views here.
 bot_configuration = BotConfiguration(
     name=config.NAME,
@@ -31,8 +30,10 @@ bot_configuration = BotConfiguration(
 )
 # viber = Api(bot_configuration)
 from kaban_bot.apps.custom_api import CustomApi
+
 viber = CustomApi(bot_configuration)
 collator = Collator()
+
 
 @csrf_exempt
 def incoming(request):
@@ -46,14 +47,18 @@ def incoming(request):
     request_dict = json.loads(request.body.decode('utf-8'))
     event = request_dict['event']
 
+    global global_text_message, global_keyboard_message, global_viber_id
+    global_text_message = None
+    global_keyboard_message = None
+    global_viber_id = None
+
     # Обробка івентів
     if (event == 'webhook' or event == 'unsubscribed' or event == 'delivered' or event == 'seen'):
         return HttpResponse(status=200)
-    elif event == 'subscribed':
-        conversation_started(request_dict)
-        return HttpResponse(status=200)
-    elif event == 'conversation_started':
-        conversation_started(request_dict)
+    elif event == 'subscribed' or event == 'conversation_started':
+        # начало общения с ботом
+        started(request_dict)
+        send(request_dict['user']['id'])
         return HttpResponse(status=200)
     elif event == 'message':
         message(request_dict)
@@ -63,290 +68,299 @@ def incoming(request):
         return HttpResponseBadRequest(f'Undeclared event: {event}')
 
 
-# Функція обробки event == 'message'
-def message(request_dict):
-    # Отримуємо інформацію
-    message_type = request_dict['message']['type']
-    message_text = request_dict['message']['text']
-    viber_id = request_dict['sender']['id']
-    viber_user = ViberUser.objects.get(viber_id=viber_id)
-
-    if viber_user.menu == 'phone_number' and message_text != 'setting':
-        message_text = 'phone_number::' + message_text
-
-    print(f'\n\nmessage_type = {message_type}\nmessage_text = {message_text}\n\n')
-
-    if message_type == 'text':
-        if viber_user.menu == 'registration':
-            save_menu(viber_user, message_text)
-            registration(message_text, viber_user)
-        # Проверка номера телефона и требование его
-        elif not viber_user.phone_number and not re.match(r'^phone_number::', message_text):
-            save_menu(viber_user, "phone_number")
-            keyboard = keyboards.phone_number(viber_user)
-            response_message = TextMessage(
-                text="Для продовження необхідно пройти авторизацію. Для цього поділіться номером телефону, котрий прив'язаний до вайберу, або введіть Ваш контактний номер телефону\nФормат: +380ХХХХХХХХХ або 0ХХХХХХХХХ",
-                keyboard=keyboard,
-                min_api_version=6)
-            viber.send_messages(viber_user.viber_id, [response_message])
-        elif re.match(r'^phone_number::\+380\d{9}$', message_text):
-            phone_number = message_text.split('::')[1]
-            viber_user_phone_number(viber_user, phone_number)
-        elif re.match(r'^phone_number::0\d{9}$', message_text):
-            phone_number = "+38" + message_text.split('::')[1]
-            viber_user_phone_number(viber_user, phone_number)
-        elif re.match(r'^phone_number::\d{9}$', message_text):
-            phone_number = "+380" + message_text.split('::')[1]
-            viber_user_phone_number(viber_user, phone_number)
-        elif re.match(r'^phone_number::\+380\d{9}::(?:yes|no)$', message_text):
-            split_message_text = message_text.split('::')
-            if split_message_text[2] == 'yes':
-                viber_user.phone_number = split_message_text[1]
-                viber_user.save()
-                save_menu(viber_user, 'start')
-                keyboard = keyboards.start_menu(viber_user)
-                response_message = TextMessage(
-                    text=f'Дякуємо, Ваш номер збережено. Ви можете його змінити в будь-який момент в налаштуваннях.\nДля продовження скористайтесь контекстним меню.',
-                    keyboard=keyboard,
-                    min_api_version=6)
-                viber.send_messages(viber_user.viber_id, [response_message])
-
-                # Відправляємо користувача до ЦРМ
-                ViberUserToRabbitMQ(viber_user, 'INSERT')
-
-            elif split_message_text[2] == 'no':
-                save_menu(viber_user, "phone_number")
-                keyboard = keyboards.phone_number(viber_user)
-                response_message = TextMessage(
-                    text="Для продовження необхідно пройти авторизацію. Для цього поділіться номером телефону, котрий прив'язаний до вайберу, або введіть Ваш контактний номер телефону\nФормат: +380ХХХХХХХХХ або 0ХХХХХХХХХ",
-                    keyboard=keyboard,
-                    min_api_version=6)
-                viber.send_messages(viber_user.viber_id, [response_message])
-        elif re.match(r'^phone_number::', message_text):
-            save_menu(viber_user, "phone_number")
-            keyboard = keyboards.phone_number(viber_user)
-            response_message = TextMessage(
-                text="Невірний формат!\nФормат: +380ХХХХХХХХХ або 0ХХХХХХХХХ",
-                keyboard=keyboard,
-                min_api_version=6)
-            viber.send_messages(viber_user.viber_id, [response_message])
-        elif message_text == 'change_phone_number':
-            keyboard = keyboards.yes_no('change_phone_number')
-            response_message = TextMessage(
-                text=f'Ваш поточний номер телефону: {viber_user.phone_number}\nВи впевнені що хочете його змінити?',
-                keyboard=keyboard,
-                min_api_version=6)
-            viber.send_messages(viber_user.viber_id, [response_message])
-        elif re.match(r'^change_phone_number::(?:yes|no)$', message_text):
-            split_message_text = message_text.split('::')
-            if split_message_text[1] == 'yes':
-                save_menu(viber_user, "phone_number")
-                keyboard = keyboards.phone_number(viber_user)
-                response_message = TextMessage(
-                    text="Надайте новий номер телефону. Для цього поділіться номером телефону, котрий прив'язаний до вайберу, або введіть Ваш контактний номер телефону\nФормат: +380ХХХХХХХХХ або 0ХХХХХХХХХ",
-                    keyboard=keyboard,
-                    min_api_version=6)
-                viber.send_messages(viber_user.viber_id, [response_message])
-            elif split_message_text[1] == 'no':
-                setting(viber_user)
-        elif message_text == 'start':
-            save_menu(viber_user, message_text)
-            keyboard = keyboards.start_menu(viber_user)
-            response_message = TextMessage(
-                text=f'Для продовження скористайтесь контекстним меню.',
-                keyboard=keyboard,
-                min_api_version=6)
-            viber.send_messages(viber_user.viber_id, [response_message])
-        elif message_text == 'setting':
-            save_menu(viber_user, message_text)
-            setting(viber_user)
-        elif message_text == 'service':
-            save_menu(viber_user, message_text)
-            service_0(viber_user)
-        elif re.match(r'^service::\d{1,2}$', message_text):
-            save_menu(viber_user, message_text)
-            service_1(viber_user, message_text.split('::')[1])
-        elif re.match(r'^service::\d{1,3}::location_manual$', message_text):
-            unique_initials = Position.objects.filter(type_code='O').annotate(initial=Left('name', 1)).order_by('initial').values_list('initial', flat=True).distinct()
-            keyboard = keyboards.location_region_startswith(unique_initials, message_text)
-            response_message = TextMessage(
-                text=f'Оберіть букву, з якої починається Ваша область.',
-                keyboard=keyboard,
-                min_api_version=6)
-            viber.send_messages(viber_user.viber_id, [response_message])
-        elif re.match(r'^service::\d{1,3}::location_manual::(\w)$', message_text):
-            positions = Position.objects.filter(name__startswith=f'{message_text.split("::")[3]}', type_code='O')
-            keyboard = keyboards.location_region_picker(positions, message_text)
-            response_message = TextMessage(
-                text=f'Оберіть Вашу область.',
-                keyboard=keyboard,
-                min_api_version=6)
-            viber.send_messages(viber_user.viber_id, [response_message])
-        elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,3}$', message_text):
-            region = Position.objects.get(id=message_text.split('::')[4])
-            positions_filter = Q(type_code='M') | Q(type_code='T') | Q(type_code='C') | Q(type_code='X')
-            unique_initials = region.get_descendants().filter(positions_filter).annotate(initial=Left('name', 1)).order_by('initial').values_list('initial', flat=True).distinct()
-            keyboard = keyboards.location_populated_centre_startswith(unique_initials, message_text)
-            response_message = TextMessage(
-                text=f'Оберіть букву, з якої починається Ваш населений пункт.',
-                keyboard=keyboard,
-                min_api_version=6)
-            viber.send_messages(viber_user.viber_id, [response_message])
-        elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}$', message_text):
-            region = Position.objects.get(id=message_text.split('::')[4])
-            positions_filter = (Q(type_code='M') | Q(type_code='T') | Q(type_code='C') | Q(type_code='X')) & Q(name__startswith=message_text.split("::")[5])
-            positions = region.get_descendants().filter(positions_filter)
-            keyboard = keyboards.location_populated_centre_picker(positions, message_text)
-            response_message = TextMessage(
-                text=f'Оберіть Ваш населений пункт',
-                keyboard=keyboard,
-                min_api_version=6)
-            viber.send_messages(viber_user.viber_id, [response_message])
-        elif re.match(r'^service::\d{1,2}::location::\d{1,8}::(?:yes|no)$', message_text):
-            save_menu(viber_user, message_text)
-            verification_service_request(viber_user)
-        elif message_text == 'my_requests':
-            save_menu(viber_user, message_text)
-            my_requests(viber_user)
-        elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}$', message_text):
-            service_number = message_text.split('::')[1]
-            service_request = ServiceRequest.objects.get(number=service_number)
-            my_request_handler(viber_user, service_request)
-        elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::cancel$', message_text):
-            service_number = message_text.split('::')[1]
-            service_request = ServiceRequest.objects.get(number=service_number)
-            my_request_cancel(viber_user, service_request)
-        elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::cancel::(?:yes|no)$', message_text):
-            split_message_text = message_text.split('::')
-            service_number = split_message_text[1]
-            service_request = ServiceRequest.objects.get(number=service_number)
-            my_request_cancel_handler(viber_user, service_request, split_message_text[3])
-        elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::reject$', message_text):
-            service_number = message_text.split('::')[1]
-            service_request = ServiceRequest.objects.get(number=service_number)
-            my_request_reject(viber_user, service_request)
-        elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::confirm$', message_text):
-            service_number = message_text.split('::')[1]
-            service_request = ServiceRequest.objects.get(number=service_number)
-            my_request_confirm(viber_user, service_request)
-        elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::problem$', message_text):
-            service_number = message_text.split('::')[1]
-            service_request = ServiceRequest.objects.get(number=service_number)
-            my_request_problem(viber_user, service_request)
-        elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::assessment$', message_text):
-            service_number = message_text.split('::')[1]
-            service_request = ServiceRequest.objects.get(number=service_number)
-            my_request_assessment(viber_user, service_request)
-        elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::assessment::\d{1}$', message_text):
-            split_message_text = message_text.split('::')
-            service_request = ServiceRequest.objects.get(number=split_message_text[1])
-            my_request_assessment_handler(viber_user, service_request, split_message_text[3])
-        elif re.match(r'^service::\d{1,3}::location$', message_text):
-            service = Service.objects.get(id=message_text.split('::')[1])
-            keyboard = keyboards.service_1(service.parent.id)
-            response_message = TextMessage(
-                text=f'Нажаль надання локації доступне лише з телефону. Подайте заявку з телефону.',
-                keyboard=keyboard[1],
-                min_api_version=6)
-            viber.send_messages(viber_user.viber_id, [response_message])
-        # Майстр
-        elif message_text == 'master_registration':
-            save_menu(viber_user, message_text)
-            keyboard = keyboards.master_registration(viber_id)
-            response_message = TextMessage(
-                text=f'Для того щоб стати майстром Вам необхідно буде надати більш детальну інформацію про себе та свої навички. Чи походжуєтесь на обробку інформації?',
-                keyboard=keyboard,
-                min_api_version=6)
-            viber.send_messages(viber_user.viber_id, [response_message])
-        elif message_text == 'master_requests':
-            save_menu(viber_user, message_text)
-            master_requests(viber_user)
-        elif message_text == 'master_service_requests_available':
-            save_menu(viber_user, message_text)
-            master_service_requests_available(viber_user)
-        elif re.match(r'^master_service_request_available::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}$', message_text):
-            service_number = message_text.split('::')[1]
-            service_request = ServiceRequest.objects.get(number=service_number)
-            master_service_request_available(viber_user, service_request)
-        elif re.match(r'^master_service_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::respond$', message_text):
-            service_number = message_text.split('::')[1]
-            service_request = ServiceRequest.objects.get(number=service_number)
-            master_service_request_respond(viber_user, service_request)
-        elif message_text == 'master_service_requests_confirmed':
-            save_menu(viber_user, message_text)
-            master_service_requests_confirmed(viber_user)
-        elif re.match(r'^master_service_request_confirmed::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}$', message_text):
-            service_number = message_text.split('::')[1]
-            service_request = ServiceRequest.objects.get(number=service_number)
-            master_service_request_confirmed(viber_user, service_request)
-        elif re.match(r'^master_service_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::done$', message_text):
-            service_number = message_text.split('::')[1]
-            service_request = ServiceRequest.objects.get(number=service_number)
-            master_service_request_done(viber_user, service_request)
-        elif re.match(r'^master_service_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::done::(?:yes|no)$', message_text):
-            split_message_text = message_text.split('::')
-            service_request = ServiceRequest.objects.get(number=split_message_text[1])
-            master_service_request_done_handler(viber_user, service_request, split_message_text[3])
-        elif re.match(r'^master_service_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::problem$', message_text):
-            service_number = message_text.split('::')[1]
-            service_request = ServiceRequest.objects.get(number=service_number)
-            master_service_request_problem(viber_user, service_request)
+def send(viber_user_id):
+    if global_text_message:
+        response_message = TextMessage(
+            text=global_text_message,
+            keyboard=global_keyboard_message,
+            min_api_version=6)
+        viber.send_messages(viber_user_id, [response_message])
+        print('отправили сообщение')
+    else:
+        print(
+            f'НЕЗАШЛИ в условие send\n\t\tglobal_text_message - {global_text_message}\n\t\tglobal_viber_id - {global_viber_id}')
 
 
-        # Адмін
-        elif message_text == 'test':
-            test(viber_user)
-    elif message_type == 'location':
-        if re.match(r'^service::\d{1,2}::location$', message_text):
-            lat = request_dict['message']['location']['lat']
-            lon = request_dict['message']['location']['lon']
-            address = request_dict['message']['location']['address']
-            create_service_request(viber_user, message_text, lat, lon, address)
-    elif message_type == "contact":
-        phone_number = "+" + request_dict['message']['contact']['phone_number']
-        viber_user_phone_number(viber_user, phone_number)
+# Функція обробки початку спілкування з ботом'
+def started(request_dict):
+    global global_text_message, global_keyboard_message, global_viber_id
 
-
-# Функція обробки event == 'conversation_started' and 'subscribed'
-def conversation_started(request_dict):
     viber_id = request_dict['user']['id']
+    global_viber_id = viber_id
 
     # Перевірка наявності користувача у базі
     viber_user = ViberUser.objects.filter(viber_id=viber_id).exists()
     if not viber_user:
         viber_user = ViberUser(viber_id=viber_id, menu='registration')
         viber_user.save()
-        response_message = TextMessage(
-            text='Вітаємо Вас!\nДаний бот допоможе принести у Вашу оселю ще більше тепла та затишку. Всі майстри кваліфіковані, мають необхідні сертифікації та індивідуальний підхід до кожного клієнта. Ви зможете замовити будь-яку існуючу послугу без зайвих турбот та всього у пару кліків. Вперед до змін!',
-            min_api_version=4)
-        viber.send_messages(viber_id, [response_message])
-        response_message = TextMessage(
-            text='Для проходження реєстрації введіть Ваше прізвище, ім’я, по батькові у називному відмінку.',
-            min_api_version=4)
-        viber.send_messages(viber_id, [response_message])
+        global_text_message = 'Вітаємо Вас!\nДаний бот допоможе принести у Вашу оселю ще більше тепла та затишку. Всі майстри кваліфіковані, мають необхідні сертифікації та індивідуальний підхід до кожного клієнта. Ви зможете замовити будь-яку існуючу послугу без зайвих турбот та всього у пару кліків. Вперед до змін!\n\nДля проходження реєстрації введіть Ваше прізвище, ім’я, по батькові у називному відмінку.'
     else:
         viber_user = ViberUser.objects.get(viber_id=viber_id)
-        keyboard = keyboards.start_menu(viber_user)
-        response_message = TextMessage(
-            text=f'З поверненням {viber_user.full_name}!\nДаний бот допоможе принести у Вашу оселю ще більше тепла та затишку. Всі майстри кваліфіковані, мають необхідні сертифікації та індивідуальний підхід до кожного клієнта. Ви зможете замовити будь-яку існуючу послугу без зайвих турбот та всього у пару кліків. Вперед до змін!',
-            keyboard=keyboard,
-            min_api_version=6)
-        viber.send_messages(viber_id, [response_message])
+        viber_user.once = 0
+        viber_user.save()
+        global_text_message = f'З поверненням {viber_user.full_name}!\nДаний бот допоможе принести у Вашу оселю ще більше тепла та затишку. Всі майстри кваліфіковані, мають необхідні сертифікації та індивідуальний підхід до кожного клієнта. Ви зможете замовити будь-яку існуючу послугу без зайвих турбот та всього у пару кліків. Вперед до змін!'
+        global_keyboard_message = keyboards.start_menu(viber_user)
 
         # Відправляємо користувача до ЦРМ
         ViberUserToRabbitMQ(viber_user, 'UPDATE')
 
 
-def registration(message_text, viber_user):
-    viber_user.full_name = message_text
-    viber_user.save()
-    save_menu(viber_user, "phone_number")
-    keyboard = keyboards.phone_number(viber_user)
-    response_message = TextMessage(
-        text="Для продовження необхідно пройти авторизацію. Для цього поділіться номером телефону, котрий прив'язаний до вайберу, або введіть Ваш контактний номер телефону\nФормат: +380ХХХХХХХХХ або 0ХХХХХХХХХ",
-        keyboard=keyboard,
-        min_api_version=6)
-    viber.send_messages(viber_user.viber_id, [response_message])
+# Функція обробки event == 'message'
+def message(request_dict):
+    global global_text_message, global_keyboard_message, global_viber_id
+    # Отримуємо інформацію
+    message_type = request_dict['message']['type']
+    message_text = request_dict['message']['text']
+    global_viber_id = request_dict['sender']['id']
+    viber_user = ViberUser.objects.get(viber_id=global_viber_id)
+
+    print(request_dict['sender']['id'])
+    print(f'\n\nmessage_type = {message_type}\nmessage_text = {message_text}\n\n')
+
+    need_handled = False
+    if not re.match(r"^\d+&&", message_text):
+        if re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}$', viber_user.menu):
+            message = viber_user.menu + '::' + message_text
+            need_handled = True
+        elif viber_user.menu == 'phone_number' and message_text != 'setting':
+            message = 'phone_number::' + message_text
+            need_handled = True
+        else:
+            message = message_text
+            need_handled = True
+    else:
+        once = message_text.split('&&')[0]
+        message = message_text.split('&&')[1]
+        print(f'???? {once} = {viber_user.once} ????')
+        global_viber_id = viber_user.viber_id
+
+        if int(once) == viber_user.once and global_viber_id:
+            need_handled = True
+            viber_user.once += 1
+            viber_user.save()
+
+    print(f'то что пытаемя обработать\nmessage = {message}\n\n')
+
+    if need_handled:
+        print("handled")
+
+        if message_type == 'text':
+            if viber_user.menu == 'registration':
+                viber_user.full_name = message
+                viber_user.menu = "phone_number"
+                viber_user.save()
+
+                global_text_message = "Для продовження необхідно пройти авторизацію. Для цього поділіться номером телефону, котрий прив'язаний до вайберу, або введіть Ваш контактний номер телефону\nФормат: +380ХХХХХХХХХ або 0ХХХХХХХХХ"
+                global_keyboard_message = keyboards.phone_number(viber_user)
+            elif not viber_user.phone_number and not re.match(r'^phone_number::', message):
+                save_menu(viber_user, "phone_number")
+                global_text_message = "Для продовження необхідно пройти авторизацію. Для цього поділіться номером телефону, котрий прив'язаний до вайберу, або введіть Ваш контактний номер телефону\nФормат: +380ХХХХХХХХХ або 0ХХХХХХХХХ"
+                global_keyboard_message = keyboards.phone_number(viber_user)
+            elif re.match(r'^phone_number::\+380\d{9}$', message):
+                phone_number = message.split('::')[1]
+                global_text_message = f'Ви підтверджуєте, що номер телефону введено коректно?\n{phone_number}'
+                global_keyboard_message = keyboards.yes_no(viber_user, f'phone_number::{phone_number}')
+            elif re.match(r'^phone_number::380\d{9}$', message):
+                phone_number = '+' + message.split('::')[1]
+                global_text_message = f'Ви підтверджуєте, що номер телефону введено коректно?\n{phone_number}'
+                global_keyboard_message = keyboards.yes_no(viber_user, f'phone_number::{phone_number}')
+            elif re.match(r'^phone_number::0\d{9}$', message):
+                phone_number = "+38" + message.split('::')[1]
+                global_text_message = f'Ви підтверджуєте, що номер телефону введено коректно?\n{phone_number}'
+                global_keyboard_message = keyboards.yes_no(viber_user, f'phone_number::{phone_number}')
+            elif re.match(r'^phone_number::\d{9}$', message):
+                phone_number = "+380" + message.split('::')[1]
+                global_text_message = f'Ви підтверджуєте, що номер телефону введено коректно?\n{phone_number}'
+                global_keyboard_message = keyboards.yes_no(viber_user, f'phone_number::{phone_number}')
+            elif re.match(r'^phone_number::\+380\d{9}::(?:yes|no)$', message):
+                message_split = message.split('::')
+
+                if message_split[2] == 'yes':
+                    viber_user.phone_number = message_split[1]
+                    viber_user.menu = 'start'
+                    viber_user.save()
+
+                    global_text_message = f'Дякуємо, Ваш номер збережено. Ви можете його змінити в будь-який момент в налаштуваннях.\nДля продовження скористайтесь контекстним меню.'
+                    global_keyboard_message = keyboards.start_menu(viber_user)
+
+                    # Відправляємо користувача до ЦРМ
+                    ViberUserToRabbitMQ(viber_user, 'INSERT')
+
+                elif message_split[2] == 'no':
+                    global_text_message = "Для продовження необхідно пройти авторизацію. Для цього поділіться номером телефону, котрий прив'язаний до вайберу, або введіть Ваш контактний номер телефону\nФормат: +380ХХХХХХХХХ або 0ХХХХХХХХХ"
+                    global_keyboard_message = keyboards.phone_number(viber_user)
+            elif re.match(r'^phone_number::', message):
+                global_text_message = "Невірний формат!\nФормат: +380ХХХХХХХХХ або 0ХХХХХХХХХ"
+                global_keyboard_message = keyboards.phone_number(viber_user)
+            elif re.match(r'^service::\d{1,2}$', message):
+                keyboard = keyboards.service_1(viber_user, message.split('::')[1])
+                global_text_message = keyboard[0]
+                global_keyboard_message = keyboard[1]
+            elif re.match(r'^service::\d{1,3}::location$', message):
+                keyboard = keyboards.service_1(viber_user, message.split('::')[1])
+                global_text_message = f'Нажаль дана функція доступна лише з телефону. Подайте заявку через телефон, або вкажіть вдресу власноруч.'
+                global_keyboard_message = keyboard[1]
+            elif re.match(r'^service::\d{1,2}::location::\d{1,8}::(?:yes|no)$', message):
+                handling = verification_service_request(viber_user, message)
+                global_text_message = handling[0]
+                global_keyboard_message = handling[1]
+            elif re.match(r'^service::\d{1,3}::location_manual$', message):
+                global_text_message = f'Оберіть букву, з якої починається Ваша область.'
+                global_keyboard_message = keyboards.location_region_startswith(viber_user, message)
+            elif re.match(r'^service::\d{1,3}::location_manual::(\w)$', message):
+                global_text_message = f'Оберіть Вашу область.'
+                global_keyboard_message = keyboards.location_region_picker(viber_user, message)
+            elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,3}$', message):
+                global_text_message = f'Оберіть букву, з якої починається Ваш населений пункт.'
+                global_keyboard_message = keyboards.location_populated_centre_startswith(viber_user, message)
+            elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}$', message):
+                global_text_message = f'Оберіть Ваш населений пункт.'
+                global_keyboard_message = keyboards.location_populated_centre_picker(viber_user, message)
+            elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}$', message):
+                save_menu(viber_user, message)
+                global_text_message = f'Введіть назву Вашої вулиці та будинок.\nНаприклад: вул. Богдана Хмельницького, буд. 20, кв. 18'
+            elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::', message):
+                handling = location_manual_handler(viber_user, message)
+                global_text_message = handling[0]
+                global_keyboard_message = handling[1]
+            elif message == 'my_requests':
+                handling = my_requests(viber_user)
+                global_text_message = handling[0]
+                global_keyboard_message = handling[1]
+            elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}$', message):
+                service_number = message_text.split('::')[1]
+                service_request = ServiceRequest.objects.get(number=service_number)
+                handling = my_request_handler(viber_user, service_request)
+                global_text_message = handling[0]
+                global_keyboard_message = handling[1]
+            elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::confirm$', message):
+                message_split = message.split('::')
+                service_request = ServiceRequest.objects.get(number=message_split[1])
+
+                handling = my_request_confirm(viber_user, service_request)
+                global_text_message = handling[0]
+                global_keyboard_message = handling[1]
+            elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::problem$', message):
+                message_split = message.split('::')
+                service_request = ServiceRequest.objects.get(number=message_split[1])
+
+                handling = my_request_problem(viber_user, service_request)
+                global_text_message = handling[0]
+                global_keyboard_message = handling[1]
+            elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::assessment$', message):
+                global_text_message = f'Оберіть оцінку від 1 до 5, де 1 - це найнижча оцінка, а 5 - найвища'
+                global_keyboard_message = keyboards.zero_to_five(viber_user, message)
+            elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::assessment::\d$', message):
+                message_split = message.split('::')
+                service_request = ServiceRequest.objects.get(number=message_split[1])
+
+                handling = my_request_assessment(viber_user, service_request, message_split[3])
+                global_text_message = handling[0]
+                global_keyboard_message = handling[1]
+            elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::reject$', message):
+                message_split = message.split('::')
+                service_request = ServiceRequest.objects.get(number=message_split[1])
+
+                handling = my_request_reject(viber_user, service_request)
+                global_text_message = handling[0]
+                global_keyboard_message = handling[1]
+            elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::cancel$', message):
+                message_split = message.split('::')
+                global_text_message = f'Ви впевнені що хочете скасувати заявку {message_split[1]}'
+                global_keyboard_message = keyboards.yes_no(viber_user, message)
+            elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::cancel::(?:yes|no)$', message):
+                message_split = message.split('::')
+                service_request = ServiceRequest.objects.get(number=message_split[1])
+
+                handling = my_request_cancel(viber_user, service_request, message_split[3])
+                global_text_message = handling[0]
+                global_keyboard_message = handling[1]
+            elif message == 'master_requests':
+                global_text_message = f'Для продовження скористайтесь контекстним меню.'
+                global_keyboard_message = keyboards.master_requests(viber_user)
+            elif re.match(r'^master_requests::available$', message):
+                service_requests = ServiceRequest.objects.filter(executors=viber_user, status_code=4)
+
+                handling = master_requests_handler(viber_user, 'available', service_requests)
+                global_text_message = handling[0]
+                global_keyboard_message = handling[1]
+            elif re.match(r'^master_requests::confirmed$', message):
+                service_requests = ServiceRequest.objects.filter(executors=viber_user, status_code=6)
+
+                handling = master_requests_handler(viber_user, 'confirmed', service_requests)
+                global_text_message = handling[0]
+                global_keyboard_message = handling[1]
+            elif re.match(r'^master_request::(?:available|confirmed)::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}$', message):
+                message_split = message.split('::')
+                service_request = ServiceRequest.objects.get(number=message_split[2])
+
+                if message_split[1] == 'available':
+                    global_text_message = f'Номер заявки: {service_request.number}\nПослуга: {service_request.service}\nНаселений пункт: {service_request.position}\nЗаявник: {service_request.customer.full_name}\nРейтинг замовника: {service_request.customer.customer_rating}'
+                    global_keyboard_message = keyboards.master_service_request(viber_user, 'available', service_request)
+
+                elif message_split[1] == 'confirmed':
+                    global_text_message = f'Номер заявки: {service_request.number}\nПослуга: {service_request.service}\n\nНаселений пункт: {service_request.position}\nАдреса: {service_request.address}\n\nЗаявник: {service_request.customer.full_name}\nНомер телефона: {service_request.customer.phone_number}\nРейтинг замовника: {service_request.customer.customer_rating}\n'
+                    global_keyboard_message = keyboards.master_service_request(viber_user, 'confirmed', service_request)
+            elif re.match(r'^master_service_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::respond$', message):
+                message_split = message.split('::')
+                service_request = ServiceRequest.objects.get(number=message_split[1])
+
+                handling = master_request_respond_handler(viber_user, service_request)
+                global_text_message = handling[0]
+                global_keyboard_message = handling[1]
+            elif re.match(r'^master_service_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::problem$', message):
+                message_split = message.split('::')
+                service_request = ServiceRequest.objects.get(number=message_split[1])
+
+                handling = master_request_problem_handler(viber_user, service_request)
+                global_text_message = handling[0]
+                global_keyboard_message = handling[1]
+            elif re.match(r'^master_service_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::done$', message):
+                message_split = message.split('::')
+                global_text_message = f'Ви хочете позначити що заявка {message_split[1]} виконана?'
+                global_keyboard_message = keyboards.yes_no(viber_user, message)
+            elif re.match(r'^master_service_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::done::(?:yes|no)$', message):
+                message_split = message.split('::')
+                service_request = ServiceRequest.objects.get(number=message_split[1])
+
+                handling = master_request_done_handler(viber_user, service_request, message_split[3])
+                global_text_message = handling[0]
+                global_keyboard_message = handling[1]
+            elif message == 'start':
+                global_text_message = f'Для продовження скористайтесь контекстним меню.'
+                global_keyboard_message = keyboards.start_menu(viber_user)
+            elif message == 'service':
+                global_text_message = f'Оберіть послугу'
+                global_keyboard_message = keyboards.service_0(viber_user)
+            elif message == 'setting':
+                global_text_message = f'Для продовження скористайтесь контекстним меню.'
+                global_keyboard_message = keyboards.setting(viber_user)
+            elif message == 'change_phone_number':
+                global_text_message = f'Ваш поточний номер телефону: {viber_user.phone_number}\nВи впевнені що хочете його змінити?'
+                global_keyboard_message = keyboards.yes_no(viber_user, 'change_phone_number')
+            elif re.match(r'^change_phone_number::(?:yes|no)$', message):
+                handling = change_phone_number(viber_user, message)
+                global_text_message = handling[0]
+                global_keyboard_message = handling[1]
+            elif message == 'master_registration':
+                global_text_message = f'Для того щоб стати майстром Вам необхідно буде надати більш детальну інформацію про себе та свої навички. Чи походжуєтесь на обробку інформації?'
+                global_keyboard_message = keyboards.master_registration(viber_user)
+            elif message_text == 'test':
+                test(viber_user)
+        elif message_type == 'location':
+            if re.match(r'^service::\d{1,2}::location$', message):
+                lat = request_dict['message']['location']['lat']
+                lon = request_dict['message']['location']['lon']
+                address = request_dict['message']['location']['address']
+                handling = location_handler(viber_user, message, lat, lon, address)
+                global_text_message = handling[0]
+                global_keyboard_message = handling[1]
+        elif message_type == "contact":
+            phone_number = "+" + request_dict['message']['contact']['phone_number']
+
+            global_text_message = f'Ви підтверджуєте, що номер телефону введено коректно?\n{phone_number}'
+            global_keyboard_message = keyboards.yes_no(viber_user, f'phone_number::{phone_number}')
+    send(request_dict['sender']['id'])
 
 
 # ╔╗╔══╗─╔══╗╔╗╔╗╔═══╗╔╗╔╗╔════╗
@@ -364,95 +378,87 @@ def my_requests(viber_user):
     service_requests = ServiceRequest.objects.filter(
         Q(customer=viber_user) &
         ~Q(status_code__in=excluded_status_codes) &
-        Q(modifiedon__gte=fourteen_days_ago)
-    )
+        Q(modifiedon__gte=fourteen_days_ago))
     text = ""
     if not service_requests:
         text = "Від Вас заявок не знайдено"
-        keyboard = keyboards.service_0()
+        keyboard = keyboards.service_0(viber_user)
     else:
-        keyboard = keyboards.my_requests(viber_user)
-    for request in service_requests:
-        status_text = request.get_status_code_display()
-        request_text = f'Номер заявки: {request.number}\nПослуга: {request.service}\nАдреса: {request.address}\nСтатус заявки: {status_text}\n\n'
-        text = text + request_text
+        keyboard = keyboards.my_requests(viber_user, service_requests)
+        for request in service_requests:
+            status_text = request.get_status_code_display()
+            request_text = f'Номер заявки: {request.number}\nПослуга: {request.service}\nАдреса: {request.address}\nСтатус заявки: {status_text}\n\n'
+            text = text + request_text
 
-    response_message = TextMessage(
-        text=text,
-        keyboard=keyboard,
-        min_api_version=6)
-    viber.send_messages(viber_user.viber_id, [response_message])
+    return text, keyboard
 
 
 def my_request_handler(viber_user, service_request):
     if service_request.status_code == '4':
-        keyboard = keyboards.my_request_cancel(service_request)
-        response_message = TextMessage(
-            text=f'На цю заявку ще не відгукнувся жодний майстер',
-            keyboard=keyboard,
-            min_api_version=6)
-        viber.send_messages(viber_user.viber_id, [response_message])
+        text = f'На цю заявку ще не відгукнувся жодний майстер'
+        keyboard = keyboards.my_request_cancel(viber_user, service_request)
     elif service_request.status_code == '5':
         executor = service_request.executors.first()
-        keyboard = keyboards.my_request_confirmation(service_request)
-        response_message = TextMessage(
-            text=f'На Вашу заявку відгукнувся майстр {executor.full_name}\nРейтинг майстра: {executor.executor_rating}',
-            keyboard=keyboard,
-            min_api_version=6)
-        viber.send_messages(viber_user.viber_id, [response_message])
+        text = f'На Вашу заявку відгукнувся майстр {executor.full_name}\nРейтинг майстра: {executor.executor_rating}'
+        keyboard = keyboards.my_request_confirmation(viber_user, service_request)
     elif service_request.status_code == '6':
-        keyboard = keyboards.my_request_cancel(service_request)
-        response_message = TextMessage(
-            text=f'Ваша заявка в роботі. Очікуйте дзвінка від майстра.',
-            keyboard=keyboard,
-            min_api_version=6)
-        viber.send_messages(viber_user.viber_id, [response_message])
+        text = f'Ваша заявка в роботі. Очікуйте дзвінка від майстра.'
+        keyboard = keyboards.my_request_cancel(viber_user, service_request)
     elif service_request.status_code == '2':
-        keyboard = keyboards.my_request_done(service_request)
-        response_message = TextMessage(
-            text=f'Майстр позначив Вашу заявку як виконану. Ви можете оцінити майстра або повідомити про проблему.',
-            keyboard=keyboard,
-            min_api_version=6)
-        viber.send_messages(viber_user.viber_id, [response_message])
+        text = f'Майстр позначив Вашу заявку як виконану. Ви можете оцінити майстра або повідомити про проблему.'
+        keyboard = keyboards.my_request_done(viber_user, service_request)
+    return text, keyboard
 
 
-def my_request_cancel(viber_user, service_request):
-    keyboard = keyboards.yes_no(f'my_request::{service_request.number}::cancel')
-    response_message = TextMessage(
-        text=f'Ви впевнені що хочете скасувати заявку {service_request.number}?',
-        keyboard=keyboard,
-        min_api_version=6)
-    viber.send_messages(viber_user.viber_id, [response_message])
-
-
-def my_request_cancel_handler(viber_user, service_request, response):
-    executors_count = service_request.executors.count()
-
-    if response == "yes":
-        # Переводимо заявку у статус "Скасованої"
-        service_request.status_code = 3
+def my_request_confirm(viber_user, service_request):
+    with transaction.atomic():
+        # Переводимо заявку у статус "В роботі (Підтверджений майстер)"
+        service_request.status_code = 6
         service_request.save()
 
-        # Відправляемо повідомлення Замовнику
-        keyboard = keyboards.my_requests(viber_user)
-        response_message = TextMessage(
-            text=f'Ваша заявка {service_request.number} - скасована',
-            keyboard=keyboard,
-            min_api_version=6)
-        viber.send_messages(viber_user.viber_id, [response_message])
+    # Відправляемо повідомлення майстру
+    executor = service_request.executors.first()
+    keyboard = keyboards.start_menu(executor)
+    response_message = TextMessage(
+        text=f'Замовник підтвердив заявку, на яку Ви відгукнулись\nНомер заявки: {service_request.number}',
+        keyboard=keyboard,
+        min_api_version=6)
+    viber.send_messages(executor.viber_id, [response_message])
 
-        if service_request.status_code in ("5", "6"):
-            # Відправляемо повідомлення Виконавцю
-            executor = service_request.executors.first()
-            keyboard = keyboards.start_menu(executor)
-            response_message = TextMessage(
-                text=f'Замовник {service_request.customer} відмінив заявку {service_request.number}',
-                keyboard=keyboard,
-                min_api_version=6)
-            viber.send_messages(executor.viber_id, [response_message])
+    # Відправляємо повідомлення замовнику
+    text = f"Заявка успішно підтверджена. Майстер зв'яжеться з вами найближчим часом"
+    keyboard = keyboards.service_0(viber_user)
+    return text, keyboard
 
-    elif response == "no":
-        my_requests(viber_user)
+
+def my_request_problem(viber_user, service_request):
+    with transaction.atomic():
+        # Переводимо заявку у статус "Уточнення (від клієнта)"
+        service_request.status_code = 8
+        service_request.save()
+    text = f'Дякую. Заявка {service_request.number} передана до відділу підтримки, незабаром з вами звяжуться для уточнення деталей'
+    keyboard = keyboards.service_0(viber_user)
+    return text, keyboard
+
+
+def my_request_assessment(viber_user, service_request, response):
+    with transaction.atomic():
+        # Переводимо заявку у статус "Завершено"
+        service_request.status_code = 9
+        service_request.save()
+
+    executor = service_request.executors.first()
+    body = {
+        'viber_id': executor.viber_id,
+        'type_assessment': "executor",
+        'assessment': response,
+    }
+    new_package = CustomCreate.create_package(service_request.id, "INSERT", 'application/json', 'kvb::assessment',
+                                              json.dumps(body))
+
+    text = f'Дякуємо за Вашу оцінку.\nДля продовження скористайтесь контекстним меню.'
+    keyboard = keyboards.start_menu(viber_user)
+    return text, keyboard
 
 
 def my_request_reject(viber_user, service_request):
@@ -500,117 +506,70 @@ def my_request_reject(viber_user, service_request):
         viber.send_messages(executor.viber_id, [response_message])
 
     # Відправляємо повідомлення клієнту
-    keyboard = keyboards.service_0()
-    response_message = TextMessage(
-        text=f'Майстер відхилений. Заявка розіслана іншим майстрам. Очікуємо відповіть від них. Після того, як відповіть буде отримана, Ви отримаєте повідомлення.',
-        keyboard=keyboard,
-        min_api_version=6)
-    viber.send_messages(viber_user.viber_id, [response_message])
+    text = f'Майстер відхилений. Заявка розіслана іншим майстрам. Очікуємо відповіть від них. Після того, як відповіть буде отримана, Ви отримаєте повідомлення.'
+    keyboard = keyboards.service_0(viber_user)
+    return text, keyboard
 
 
-def my_request_confirm(viber_user, service_request):
-    # Переводимо заявку у статус "Очікування майстра"
-    service_request.status_code = 6
-    service_request.save()
+def my_request_cancel(viber_user, service_request, response):
+    executors_count = service_request.executors.count()
 
-    # Відправляемо повідомлення Виконавцю
-    executor = service_request.executors.first()
-    keyboard = keyboards.start_menu(executor)
-    response_message = TextMessage(
-        text=f'Замовник підтвердив заявку, на яку Ви відгукнулись\nНомер заявки: {service_request.number}',
-        keyboard=keyboard,
-        min_api_version=6)
-    viber.send_messages(executor.viber_id, [response_message])
+    if response == "yes":
+        with transaction.atomic():
+            # Переводимо заявку у статус "Скасованої"
+            service_request.status_code = 3
+            service_request.save()
 
-    # Відправляємо повідомлення клієнту
-    keyboard = keyboards.service_0()
-    response_message = TextMessage(
-        text=f"Заявка успішно підтверджена. Майстер зв'яжеться з вами найближчим часом",
-        keyboard=keyboard,
-        min_api_version=6)
-    viber.send_messages(viber_user.viber_id, [response_message])
+        if service_request.status_code in ("5", "6"):
+            # Відправляемо повідомлення Виконавцю
+            executor = service_request.executors.first()
+            keyboard = keyboards.start_menu(executor)
+            response_message = TextMessage(
+                text=f'Замовник {service_request.customer} відмінив заявку {service_request.number}',
+                keyboard=keyboard,
+                min_api_version=6)
+            viber.send_messages(executor.viber_id, [response_message])
 
+        # Відправляемо повідомлення Замовнику
+        text = f'Ваша заявка {service_request.number} - скасована'
+        keyboard = keyboards.service_0(viber_user)
 
-def my_request_problem(viber_user, service_request):
-    with transaction.atomic():
-        service_request.status_code = 8
-        service_request.save()
+        return text, keyboard
 
-    keyboard = keyboards.my_requests(viber_user)
-    response_message = TextMessage(
-        text=f'Дякую. Заявка {service_request.number} передана до відділу підтримки, незабаром з вами звяжуться для уточнення деталей',
-        keyboard=keyboard,
-        min_api_version=6)
-    viber.send_messages(viber_user.viber_id, [response_message])
+    elif response == "no":
+        handling = my_requests(viber_user)
+        return handling[0], handling[1]
 
 
-def my_request_assessment(viber_user, service_request):
-    keyboard = keyboards.zero_to_five(f'my_request::{service_request.number}::assessment')
-    response_message = TextMessage(
-        text=f'Оберіть оцінку від 1 до 5, де 1 - це найнижча оцінка, а 5 - найвища',
-        keyboard=keyboard,
-        min_api_version=6)
-    viber.send_messages(viber_user.viber_id, [response_message])
+def change_phone_number(viber_user, message):
+    message_split = message.split('::')
+    if message_split[1] == 'yes':
+        save_menu(viber_user, "phone_number")
+        text = "Надайте новий номер телефону. Для цього поділіться номером телефону, котрий прив'язаний до вайберу, або введіть Ваш контактний номер телефону\nФормат: +380ХХХХХХХХХ або 0ХХХХХХХХХ"
+        keyboard = keyboards.phone_number(viber_user)
+    elif message_split[1] == 'no':
+        text = f'Для продовження скористайтесь контекстним меню.'
+        keyboard = keyboards.setting(viber_user)
+    return text, keyboard
 
 
-def my_request_assessment_handler(viber_user, service_request, response):
-    with transaction.atomic():
-        service_request.status_code = 9
-        service_request.save()
-
-    keyboard = keyboards.start_menu(viber_user)
-    response_message = TextMessage(
-        text=f'Дякуємо за Вашу оцінку.\nДля продовження скористайтесь контекстним меню.',
-        keyboard=keyboard,
-        min_api_version=6)
-    viber.send_messages(viber_user.viber_id, [response_message])
-
-    executor = service_request.executors.first()
-    body = {
-        'viber_id': executor.viber_id,
-        'type_assessment': "executor",
-        'assessment': response,
-    }
-    new_package = CustomCreate.create_package(service_request.id, "INSERT", 'application/json', 'kvb::assessment', json.dumps(body))
-
-
-# Послуги
-def service_0(viber_user):
-    keyboard = keyboards.service_0()
-    response_message = TextMessage(
-        text=f'Оберіть послугу',
-        keyboard=keyboard,
-        min_api_version=6)
-    viber.send_messages(viber_user.viber_id, [response_message])
-
-
-def service_1(viber_user, service_id):
-    keyboard = keyboards.service_1(service_id)
-    response_message = TextMessage(
-        text=keyboard[0],
-        keyboard=keyboard[1],
-        min_api_version=6)
-    viber.send_messages(viber_user.viber_id, [response_message])
-
-
-def create_service_request(viber_user, message_text, lat, lon, address):
-    print(message_text)
+def location_handler(viber_user, message, lat, lon, address):
     location = geocoder.osm([lat, lon], method='reverse')
 
-    # location_info = location.raw
-    # print(location_info)
+    # print(location.raw)
+    # print(address)
+    # print(location.raw['display_name'])
 
     city = location.city
     town = location.town
     code_ua = location.raw['address']['ISO3166-2-lvl4'].replace("-", "")
-
-    # display_name = location.raw['display_name']
 
     split_address = address.split(", ")
     display_address = ''
     if len(split_address) >= 5:
         display_address = split_address[-4] + ', '
     display_address = display_address + location.raw['display_name']
+
     # print(display_address)
 
     if city:
@@ -618,28 +577,56 @@ def create_service_request(viber_user, message_text, lat, lon, address):
     elif town:
         position = Position.objects.filter(name=city, codifier__startswith=code_ua)
 
+    # print(position)
+
     if position:
         viber_user.address = display_address
         viber_user.save()
-        service = Service.objects.get(id=message_text.split('::')[1])
-        keyboard = keyboards.yes_no(message_text + '::' + str(position[0].id))
-        response_message = TextMessage(
-            text=f'Ви підтверджуєте заявку?\nПослуга: {service.name}\nМісце проведення: {display_address}',
-            keyboard=keyboard,
-            min_api_version=6)
-        viber.send_messages(viber_user.viber_id, [response_message])
+        service = Service.objects.get(id=message.split('::')[1])
+        keyboard = keyboards.yes_no(viber_user, message + '::' + str(position[0].id))
+        text = f'Ви підтверджуєте заявку?\nПослуга: {service.name}\nМісце проведення: {display_address}'
     else:
-        print("НЕ НАШЛИ РАСПОЛОЖЕНИЕ")
+        key_def = keyboards.service_1(viber_user, message.split('::')[1])
+        text = 'Розташування не було знайдене, вкажіть його вручну.'
+        keyboard = key_def[1]
+
+    return text, keyboard
+
+
+def location_manual_handler(viber_user, message):
+    message_split = message.split("::")
+    position = Position.objects.get(id=message_split[7])
+    address = message_split[8]
+    viber_user.address = address
+    viber_user.save()
+
+    full_path = get_parents_names(position)
+
+    display_address = full_path + ', ' + viber_user.address
+
+    print(full_path)
+    print(display_address)
+
+    viber_user.address = display_address
+    viber_user.save()
+    service = Service.objects.get(id=message.split('::')[1])
+    text = f'Ви підтверджуєте заявку?\nПослуга: {service.name}\n\nМісце проведення: {display_address}'
+    keyboard = keyboards.yes_no(viber_user, 'service::' + str(service.id) + '::location::' + str(position.id))
+
+    return text, keyboard
 
 
 # "Підтвердження" на створення заявку
-def verification_service_request(viber_user):
-    service_id = viber_user.menu.split('::')[1]
-    position_id = viber_user.menu.split('::')[3]
-    verification = viber_user.menu.split('::')[4]
-    if verification == "no":
-        service_1(viber_user, service_id)
-    elif verification == "yes":
+def verification_service_request(viber_user, message):
+    message_split = message.split("::")
+    service_id = message_split[1]
+    position_id = message_split[3]
+    response = message_split[4]
+    if response == "no":
+        key_def = keyboards.service_1(viber_user, message.split('::')[1])
+        text = key_def[0]
+        keyboard = key_def[1]
+    elif response == "yes":
         today = date.today()
         start_date = datetime.combine(today, datetime.min.time())
         end_date = datetime.combine(today, datetime.max.time())
@@ -657,12 +644,11 @@ def verification_service_request(viber_user):
         service_request.save()
         # ServiceRequestToRabbitMQ(service_request, 'INSERT')
 
-        keyboard = keyboards.start()
-        response_message = TextMessage(text=f'Ваша заявка створена!\nНомер заявки: {number}',
-                                       keyboard=keyboard,
-                                       min_api_version=6)
-        viber.send_messages(viber_user.viber_id, [response_message])
+        text = f'Ваша заявка створена!\nНомер заявки: {number}'
+        keyboard = keyboards.start(viber_user)
+
         service_request_handler(service_request)
+    return text, keyboard
 
 
 # Функція яка додає виконавців і оповіщує їх про створення нової заяки
@@ -680,61 +666,21 @@ def service_request_handler(service_request):
         viber.send_messages(executor.viber_id, [response_message])
 
 
-# ╔╗──╔╗╔══╗╔══╗╔════╗╔═══╗╔═══╗
-# ║║──║║║╔╗║║╔═╝╚═╗╔═╝║╔══╝║╔═╗║
-# ║╚╗╔╝║║╚╝║║║────║║──║╚══╗║╚═╝║
-# ║╔╗╔╗║║╔╗║║║────║║──║╔══╝║╔══╝
-# ║║╚╝║║║║║║║╚═╗──║║──║╚══╗║║───
-# ╚╝──╚╝╚╝╚╝╚══╝──╚╝──╚═══╝╚╝───
-
-
-# Кнопка "Заявки" у майстрів
-def master_requests(viber_user):
-    text = "Ваші заявки"
-    keyboard = keyboards.master_requests(viber_user)
-    response_message = TextMessage(
-        text=text,
-        keyboard=keyboard,
-        min_api_version=6)
-    viber.send_messages(viber_user.viber_id, [response_message])
-
-
-# Заявки для майстрів
-def master_service_requests_available(viber_user):
-    service_requests = ServiceRequest.objects.filter(executors=viber_user, status_code=4)
+def master_requests_handler(viber_user, prefix, service_requests):
     text = ""
     for request in service_requests:
-        status_text = request.get_status_code_display()
         request_text = f'Номер заявки: {request.number}\nПослуга: {request.service}\nНаселений пункт: {request.position}\n\n'
         text = text + request_text
 
     if service_requests.exists():
-        keyboard = keyboards.master_service_requests("available", service_requests)
-        response_message = TextMessage(
-            text=text,
-            keyboard=keyboard,
-            min_api_version=6)
-        viber.send_messages(viber_user.viber_id, [response_message])
+        keyboard = keyboards.master_service_requests(viber_user, prefix, service_requests)
     else:
+        text = "Заявки відсутні"
         keyboard = keyboards.master_requests(viber_user)
-        response_message = TextMessage(
-            text="Заявки відсутні",
-            keyboard=keyboard,
-            min_api_version=6)
-        viber.send_messages(viber_user.viber_id, [response_message])
+    return text, keyboard
 
 
-def master_service_request_available(viber_user, service_request):
-    keyboard = keyboards.master_service_request('available', service_request)
-    text = f'Номер заявки: {service_request.number}\nПослуга: {service_request.service}\nНаселений пункт: {service_request.position}\nЗаявник: {service_request.customer.full_name}\nРейтинг замовника: {service_request.customer.customer_rating}\n'
-    response_message = TextMessage(
-        text=text,
-        keyboard=keyboard,
-        min_api_version=6)
-    viber.send_messages(viber_user.viber_id, [response_message])
-
-
-def master_service_request_respond(viber_user, service_request):
+def master_request_respond_handler(viber_user, service_request):
     with transaction.atomic():
         # Відвязуємо всіх виконавців
         service_request.executors.clear()
@@ -746,69 +692,34 @@ def master_service_request_respond(viber_user, service_request):
         service_request.status_code = 5
         service_request.save()
 
-    # Відправляємо повідомлення майстру
-    keyboard = keyboards.start_menu(viber_user)
-    text = f'Ви відгунулися на заявку. Коли замовник підтвердить заявку, вам прийде повідомлення. Для подальшої роботи скористайтесь контекстним меню'
-    response_message = TextMessage(
-        text=text,
-        keyboard=keyboard,
-        min_api_version=6)
-    viber.send_messages(viber_user.viber_id, [response_message])
-
-    # Відправляємо повідомлення замовнику і просимо його перейти в мої заявки та підтвердити
-    keyboard = keyboards.start_menu(service_request.customer)
+    # Відправляємо повідомлення замовнику і просимо його перейти в мої заявки та підтвердити майстра
     text = f'На вашу заявку відгукнувся майстер. Перейдіть до послуг, оберіть мої заявки та підтвердіть майстра!'
+    keyboard = keyboards.start_menu(service_request.customer)
     response_message = TextMessage(
         text=text,
         keyboard=keyboard,
         min_api_version=6)
     viber.send_messages(service_request.customer.viber_id, [response_message])
 
+    # Відправляємо повідомлення майстру
+    text = f'Ви відгунулися на заявку. Коли замовник підтвердить заявку, вам прийде повідомлення. Для подальшої роботи скористайтесь контекстним меню'
+    keyboard = keyboards.start_menu(viber_user)
+    return text, keyboard
 
-def master_service_requests_confirmed(viber_user):
-    service_requests = ServiceRequest.objects.filter(executors=viber_user, status_code=6)
-    text = ""
-    for request in service_requests:
-        status_text = request.get_status_code_display()
-        request_text = f'Номер заявки: {request.number}\nПослуга: {request.service}\nНаселений пункт: {request.position}\n\n'
-        text = text + request_text
 
-    if service_requests.exists():
-        keyboard = keyboards.master_service_requests('confirmed', service_requests)
-        response_message = TextMessage(
-            text=text,
-            keyboard=keyboard,
-            min_api_version=6)
-        viber.send_messages(viber_user.viber_id, [response_message])
-    else:
+def master_request_problem_handler(viber_user, service_request):
+    with transaction.atomic():
+        # Статус "Уточнення (від майстра)"
+        service_request.status_code = 7
+        service_request.save()
+
+        text = f'Дякуємо. Заявка {service_request.number} передана до відділу підтримки, незабаром з вами звяжуться для уточнення деталей.'
         keyboard = keyboards.master_requests(viber_user)
-        response_message = TextMessage(
-            text="Заявки відсутні",
-            keyboard=keyboard,
-            min_api_version=6)
-        viber.send_messages(viber_user.viber_id, [response_message])
+
+        return text, keyboard
 
 
-def master_service_request_confirmed(viber_user, service_request):
-    keyboard = keyboards.master_service_request('confirmed', service_request)
-    text = f'Номер заявки: {service_request.number}\nПослуга: {service_request.service}\nНаселений пункт: {service_request.position}\nАдреса: {service_request.address}\nЗаявник: {service_request.customer.full_name}\nНомер телефона: {service_request.customer.phone_number}\nРейтинг замовника: {service_request.customer.customer_rating}\n'
-    response_message = TextMessage(
-        text=text,
-        keyboard=keyboard,
-        min_api_version=6)
-    viber.send_messages(viber_user.viber_id, [response_message])
-
-
-def master_service_request_done(viber_user, service_request):
-    keyboard = keyboards.yes_no(f'master_service_request::{service_request.number}::done')
-    response_message = TextMessage(
-        text=f'Ви хочете позначити що заявка {service_request.number} виконана?',
-        keyboard=keyboard,
-        min_api_version=6)
-    viber.send_messages(viber_user.viber_id, [response_message])
-
-
-def master_service_request_done_handler(viber_user, service_request, response):
+def master_request_done_handler(viber_user, service_request, response):
     if response == 'yes':
         with transaction.atomic():
             # Статус "Виконана"
@@ -816,43 +727,22 @@ def master_service_request_done_handler(viber_user, service_request, response):
             service_request.status_code = 2
             service_request.save()
 
-        # Відправляємо повідомлення майстру
-        keyboard = keyboards.start_menu(viber_user)
-        response_message = TextMessage(
-            text=f'Ви підтвердили виконання заявки {service_request.number}',
-            keyboard=keyboard,
-            min_api_version=6)
-        viber.send_messages(viber_user.viber_id, [response_message])
-
-        # Відправляємо повідомлення замовнику і просимо його перейти в мої заявки та підтвердити
+        # Відправляємо повідомлення замовнику
         keyboard = keyboards.start_menu(service_request.customer)
         response_message = TextMessage(
             text=f'Майстер підтвердив виконання Вашої заявки {service_request.number}',
             keyboard=keyboard,
             min_api_version=6)
         viber.send_messages(service_request.customer.viber_id, [response_message])
+
+        # Відправляємо повідомлення майстру
+        text = f'Ви підтвердили виконання заявки {service_request.number}'
+        keyboard = keyboards.start_menu(viber_user)
     elif response == 'no':
         # Відправляємо повідомлення майстру
-        keyboard = keyboards.master_service_request('confirmed', service_request)
-        response_message = TextMessage(
-            text=f'Обрана заявка {service_request.number}',
-            keyboard=keyboard,
-            min_api_version=6)
-        viber.send_messages(viber_user.viber_id, [response_message])
-
-
-def master_service_request_problem(viber_user, service_request):
-    with transaction.atomic():
-        # Статус "Виконана"
-        service_request.status_code = 7
-        service_request.save()
-
-    keyboard = keyboards.master_requests(viber_user)
-    response_message = TextMessage(
-        text=f'Дякую. Заявка {service_request.number} передана до відділу підтримки, незабаром з вами звяжуться для уточнення деталей',
-        keyboard=keyboard,
-        min_api_version=6)
-    viber.send_messages(viber_user.viber_id, [response_message])
+        text = f'Обрана заявка {service_request.number}'
+        keyboard = keyboards.master_service_request(viber_user, 'confirmed', service_request)
+    return text, keyboard
 
 
 # "Погодження" на реєстрацію майстра
@@ -948,6 +838,14 @@ def nodeToJSON(model_name, id):
     return data
 
 
+def get_parents_names(node):
+    names = [node.name]
+    while node.parent:
+        node = node.parent
+        names.insert(0, node.name)
+    return ", ".join(names)
+
+
 def ViberUserToRabbitMQ(viber_user, operation):
     class ViberUserSerializer(serializers.ModelSerializer):
         class Meta:
@@ -975,30 +873,10 @@ def ServiceRequestToRabbitMQ(service_request, operation):
                                               json.dumps(body))
 
 
-def viber_user_phone_number(viber_user, phone_number):
-    save_menu(viber_user, f'phone_number::{phone_number}')
-    keyboard = keyboards.yes_no(f'phone_number::{phone_number}')
-    response_message = TextMessage(
-        text=f'Ви підтверджуєте, що номер телефону введено коректно?\n{phone_number}',
-        keyboard=keyboard,
-        min_api_version=6)
-    viber.send_messages(viber_user.viber_id, [response_message])
-
-
-# Налаштування
-def setting(viber_user):
-    keyboard = keyboards.setting()
-    response_message = TextMessage(
-        text=f'Для продовження скористайтесь контекстним меню.',
-        keyboard=keyboard,
-        min_api_version=6)
-    viber.send_messages(viber_user.viber_id, [response_message])
-
 # Функція записує меню у вайбер-користувача
 def save_menu(viber_user, menu):
     viber_user.menu = menu
     viber_user.save()
-
 
 
 def test(viber_user):

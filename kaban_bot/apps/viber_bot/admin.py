@@ -41,7 +41,7 @@ class ViberUserAdmin(admin.ModelAdmin):
     form = ViberUserForm
     fieldsets = (
         (None, {
-            'fields': ('full_name', 'phone_number', 'executor', 'viber_id', 'menu', 'system_administrator'),
+            'fields': ('once', 'full_name', 'phone_number', 'executor', 'viber_id', 'menu', 'system_administrator'),
         }),
         ('Рейтинг', {
             'classes': ('collapse',),

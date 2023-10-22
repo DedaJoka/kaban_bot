@@ -104,6 +104,7 @@ class ViberUser(models.Model):
     service = models.ManyToManyField(Service, verbose_name="Послуги", related_name='viber_user_service')
     executor = models.BooleanField(verbose_name="Виконавець", default=False)
     system_administrator = models.BooleanField(verbose_name="Системний адміністратор", default=False)
+    once = models.IntegerField(verbose_name="костиль", default=0)
     customer_rating = models.FloatField(
         verbose_name="Рейтинг клієнта",
         validators=[MinValueValidator(0.0), MaxValueValidator(5.0)],
