@@ -119,7 +119,7 @@ def message(request_dict):
 
     need_handled = False
     if not re.match(r"^\d+&&", message_text):
-        if re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}$', viber_user.menu):
+        if re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}$', viber_user.menu) and not re.match(r"https://", message_text):
             message = viber_user.menu + '::' + message_text
             need_handled = True
         elif viber_user.menu == 'phone_number' and message_text != 'setting':
