@@ -128,7 +128,7 @@ def message(request_dict):
         else:
             message = message_text
             need_handled = True
-    else:
+    elif not re.match(r"https://", message_text):
         once = message_text.split('&&')[0]
         message = message_text.split('&&')[1]
         print(f'???? {once} = {viber_user.once} ????')
