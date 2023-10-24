@@ -120,6 +120,14 @@ def message(request_dict):
     need_handled = False
     if not re.match(r"^\d+&&", message_text):
         if re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}$', viber_user.menu) and not re.match(r"https://", message_text):
+            modified_street = message_text.replace(" ", "_")
+            message = viber_user.menu + '::' + modified_street
+            need_handled = True
+        elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street$', viber_user.menu) and not re.match(r"https://", message_text):
+            modified_number = message_text.replace(" ", "_")
+            message = viber_user.menu + '::' + modified_number
+            need_handled = True
+        elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street::number$', viber_user.menu) and not re.match(r"https://", message_text):
             message = viber_user.menu + '::' + message_text
             need_handled = True
         elif viber_user.menu == 'phone_number' and message_text != 'setting':
@@ -218,9 +226,22 @@ def message(request_dict):
                 global_keyboard_message = keyboards.location_populated_centre_picker(viber_user, message)
             elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}$', message):
                 save_menu(viber_user, message)
-                global_text_message = f'Введіть назву Вашої вулиці та будинок.\nНаприклад: вул. Богдана Хмельницького, буд. 20, кв. 18'
-            elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::', message):
+                global_text_message = f'Введіть назву Вашої вулиці\nНаприклад:\n\tвул. Богдана Хмельницького\n\tпровулок Незалежності'
+                global_keyboard_message = keyboards.start_input(viber_user)
+            elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::.+$', message) and re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}$', viber_user.menu):
+                handling = location_manual_street_handler(viber_user, message)
+                global_text_message = handling[0]
+                global_keyboard_message = handling[1]
+            elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street::[\w\\/а-яА-Яa-zA-Z]+$', message):
+                handling = location_manual_number_handler(viber_user, message)
+                global_text_message = handling[0]
+                global_keyboard_message = handling[1]
+            elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street::number::\d+$', message):
                 handling = location_manual_handler(viber_user, message)
+                global_text_message = handling[0]
+                global_keyboard_message = handling[1]
+            elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street::number::skip$', message):
+                handling = location_manual_handler(viber_user, message, True)
                 global_text_message = handling[0]
                 global_keyboard_message = handling[1]
             elif message == 'my_requests':
@@ -593,10 +614,13 @@ def location_handler(viber_user, message, lat, lon, address):
     return text, keyboard
 
 
-def location_manual_handler(viber_user, message):
+def location_manual_handler(viber_user, message, skip=False):
     message_split = message.split("::")
     position = Position.objects.get(id=message_split[7])
-    address = message_split[8]
+    if skip:
+        address = viber_user.address
+    else:
+        address = viber_user.address + ', кв. ' + message_split[10]
     viber_user.address = address
     viber_user.save()
 
@@ -613,6 +637,43 @@ def location_manual_handler(viber_user, message):
     text = f'Ви підтверджуєте заявку?\nПослуга: {service.name}\n\nМісце проведення: {display_address}'
     keyboard = keyboards.yes_no(viber_user, 'service::' + str(service.id) + '::location::' + str(position.id))
 
+    body = {
+        'address': address,
+    }
+    json_body = json.dumps(body, ensure_ascii=False)
+    new_package = CustomCreate.create_package(viber_user.id, 'INSERT', 'application/json', 'kvb::address',
+                                              json_body)
+
+    return text, keyboard
+
+
+def location_manual_street_handler(viber_user, message):
+    message_split = message.split("::")
+    menu = "::".join(message_split[:-1])
+
+    street = message_split[8]
+    modified_street = street.replace("_", " ")
+    viber_user.address = modified_street
+    viber_user.menu = menu + '::street'
+    viber_user.save()
+
+    text = f'Введіть номер Вашого будинку\nНаприклад: 64 (64/1)'
+    keyboard = keyboards.start_input(viber_user)
+
+    return text, keyboard
+
+def location_manual_number_handler(viber_user, message):
+    message_split = message.split("::")
+    menu = "::".join(message_split[:-1])
+
+    number = message_split[9]
+    modified_number = number.replace("_", " ")
+    viber_user.address = viber_user.address + ', буд. ' + modified_number
+    viber_user.menu = menu + '::number'
+    viber_user.save()
+
+    text = f'Введіть номер Вшої квартири\nНаприклад: 108\n\nЯкщо квартира відсутня, натисніть кнопку "Пропустити"'
+    keyboard = keyboards.skip(viber_user, viber_user.menu)
     return text, keyboard
 
 

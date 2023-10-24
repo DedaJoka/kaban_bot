@@ -17,7 +17,7 @@ class Position(MPTTModel):
 
     # Кастомні поля
     name = models.CharField(verbose_name="Назва", max_length=128, blank=True)
-    codifier = models.CharField(verbose_name="Кодифікатор", max_length=100, blank=True, unique=True)
+    codifier = models.CharField(verbose_name="Кодифікатор", max_length=100, blank=True, null=True, unique=True)
     parent = TreeForeignKey('self', verbose_name="Батьківське розташування", on_delete=models.CASCADE, null=True, blank=True, related_name='children')
 
     type_code_set = (('O', 'Область або АРК'),

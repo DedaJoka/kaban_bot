@@ -18,6 +18,14 @@ class ServiceChildrenInline(admin.TabularInline):
     ordering = ['priority']
 
 
+class PositionChildrenInline(admin.TabularInline):
+    model = Position
+    fk_name = 'parent'
+    extra = 0
+    fields = ['name', 'codifier']
+    ordering = ['name']
+
+
 class ViberUserForm(forms.ModelForm):
     # Определяем форму с виджетом FilteredSelectMultiple для поля ManyToManyField 'position'
     position = forms.ModelMultipleChoiceField(
@@ -41,7 +49,7 @@ class ViberUserAdmin(admin.ModelAdmin):
     form = ViberUserForm
     fieldsets = (
         (None, {
-            'fields': ('once', 'full_name', 'phone_number', 'executor', 'viber_id', 'menu', 'system_administrator'),
+            'fields': ('full_name', 'phone_number', 'executor', 'viber_id', 'system_administrator'),
         }),
         ('Рейтинг', {
             'classes': ('collapse',),
@@ -50,6 +58,10 @@ class ViberUserAdmin(admin.ModelAdmin):
         ('Advanced Options', {
             'classes': ('collapse',),
             'fields': ('position', 'service'),
+        }),
+        ('Костыли', {
+            'classes': ('wide',),
+            'fields': ('once', 'menu', 'address'),
         }),
     )
 admin.site.register(ViberUser, ViberUserAdmin)
@@ -96,6 +108,8 @@ admin.site.register(ServiceRequest, ServiceRequestAdmin)
 
 class PositionAdmin(DraggableMPTTAdmin):
     list_filter = ('type_code',)
+    search_fields = ['name', 'codifier']
+    inlines = [PositionChildrenInline]
 admin.site.register(Position, PositionAdmin)
 
 

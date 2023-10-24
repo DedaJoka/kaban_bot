@@ -187,7 +187,7 @@ def start_menu(viber_user):
                               # actiontype - ТИП ОТВЕТА
                               'reply',
                               # actionbody - ОТВЕТ (дописать " 0" - прозрачный текст)
-                              f'{viber_user.once}&&test',
+                              f'{viber_user.once}&&service::16::location_manual::П::2::П::1::10',
                               ))
 
     keyboard = keyboard_def(buttons, "hidden")
@@ -746,6 +746,21 @@ def location_populated_centre_picker(viber_user, message):
                               f"{viber_user.once}&&{message_without_page}::{page.previous_page_number()}"
                               ))
 
+
+
+    if region.id == 24: #Київська
+        buttons.append(button(6, 1,  # Columns & Rows
+                              f'<font size=18 color="#FFFFFF"><b>Київ</b></font><br><font size=12 color="#FFFFFF"><b>Столиця України</b></font>',
+                              # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
+                              f'',
+                              # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
+                              f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1/green.png',
+                              # actiontype - ТИП ОТВЕТА
+                              'reply',
+                              # actionbody - ОТВЕТ
+                              f"{viber_user.once}&&{message}::7",
+                              ))
+
     for position in page:
         buttons.append(button(6, 1,  # Columns & Rows
                               f'<font size=18 color="#FFFFFF"><b>{position.name}</b></font><br><font size=12 color="#FFFFFF"><b>{position.parent} громада</b></font>',
@@ -876,6 +891,53 @@ def phone_number(viber_user):
                                    ))
         buttons.append(
             button_home(viber_user, f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1/gray_light.png'))
+
+    keyboard = keyboard_def(buttons, "regular")
+    return keyboard
+
+
+def start_input(viber_user):
+    buttons = []
+    buttons.append(button(6, 1,  # Columns & Rows
+                          f'<font size=22 color="#404040"><b>До головного меню</b></font>',
+                          # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
+                          f'',
+                          # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
+                          f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1/gray_light.png',
+                          # actiontype - ТИП ОТВЕТА
+                          'reply',
+                          # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
+                          f'{viber_user.once}&&start',
+                          ))
+    keyboard = keyboard_def(buttons, "regular")
+    return keyboard
+
+
+def skip(viber_user, text):
+    buttons = []
+    buttons.append(button(6, 1,  # Columns & Rows
+                          f'<font size=22 color="#404040"><b>Пропустить</b></font>',
+                          # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
+                          f'',
+                          # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
+                          f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1/gray_light.png',
+                          # actiontype - ТИП ОТВЕТА
+                          'reply',
+                          # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
+                          f'{viber_user.once}&&{text}::skip',
+                          ))
+
+    buttons.append(button(6, 1,  # Columns & Rows
+                          f'<font size=22 color="#404040"><b>До головного меню</b></font>',
+                          # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
+                          f'',
+                          # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
+                          f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1/gray_light.png',
+                          # actiontype - ТИП ОТВЕТА
+                          'reply',
+                          # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
+                          f'{viber_user.once}&&start',
+                          ))
 
     keyboard = keyboard_def(buttons, "regular")
     return keyboard
