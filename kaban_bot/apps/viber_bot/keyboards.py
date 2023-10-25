@@ -187,7 +187,7 @@ def start_menu(viber_user):
                               # actiontype - ТИП ОТВЕТА
                               'reply',
                               # actionbody - ОТВЕТ (дописать " 0" - прозрачный текст)
-                              f'{viber_user.once}&&service::16::location_manual::П::2::П::1::10',
+                              f'{viber_user.once}&&test',
                               ))
 
     keyboard = keyboard_def(buttons, "hidden")

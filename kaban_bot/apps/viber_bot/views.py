@@ -366,8 +366,10 @@ def message(request_dict):
             elif message == 'master_registration':
                 global_text_message = f'Для того щоб стати майстром Вам необхідно буде надати більш детальну інформацію про себе та свої навички. Чи походжуєтесь на обробку інформації?'
                 global_keyboard_message = keyboards.master_registration(viber_user)
-            elif message_text == 'test':
-                test(viber_user)
+            elif message == 'test':
+                handling = test(viber_user)
+                global_text_message = handling[0]
+                global_keyboard_message = handling[1]
         elif message_type == 'location':
             if re.match(r'^service::\d{1,2}::location$', message):
                 lat = request_dict['message']['location']['lat']
@@ -638,7 +640,7 @@ def location_manual_handler(viber_user, message, skip=False):
     keyboard = keyboards.yes_no(viber_user, 'service::' + str(service.id) + '::location::' + str(position.id))
 
     body = {
-        'address': address,
+        'address': display_address,
     }
     json_body = json.dumps(body, ensure_ascii=False)
     new_package = CustomCreate.create_package(viber_user.id, 'INSERT', 'application/json', 'kvb::address',
@@ -939,6 +941,11 @@ def save_menu(viber_user, menu):
     viber_user.menu = menu
     viber_user.save()
 
+import pysnooper
 
+# @pysnooper.snoop()
 def test(viber_user):
     print("test")
+    text = f'TEST'
+    keyboard = keyboards.star1_menu(viber_user)
+    return text, keyboard
