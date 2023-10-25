@@ -12,3 +12,4 @@ certifi==2022.9.24
 pytz==2023.3
 django-crontab==0.7.1
 pyuca==1.2
+PySnooper==1.2.0
