@@ -348,6 +348,7 @@ def message(request_dict):
                 global_text_message = handling[0]
                 global_keyboard_message = handling[1]
             elif message == 'start':
+                save_menu(viber_user, 'start')
                 global_text_message = f'Для продовження скористайтесь контекстним меню.'
                 global_keyboard_message = keyboards.start_menu(viber_user)
             elif message == 'service':
