@@ -64,7 +64,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f'{current_datetime} - {messages_consumed} received in {execution_time:.5f} seconds. Approximately {records_per_minute:.2f} per minute.'))
 
 class CustomCreate:
-    def create_package(identifier, operation, contentType, type, body):
+    def create_package(operation, contentType, type, body, identifier=timestamp_value):
         new_package = RabbitPackage(direction=1,
                                     priority=1,
                                     status_code=3,

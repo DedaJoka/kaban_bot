@@ -477,8 +477,7 @@ def my_request_assessment(viber_user, service_request, response):
         'type_assessment': "executor",
         'assessment': response,
     }
-    new_package = CustomCreate.create_package(service_request.id, "INSERT", 'application/json', 'kvb::assessment',
-                                              json.dumps(body))
+    new_package = CustomCreate.create_package("INSERT", 'application/json', 'kvb::assessment', json.dumps(body), service_request.id)
 
     text = f'Дякуємо за Вашу оцінку.\nДля продовження скористайтесь контекстним меню.'
     keyboard = keyboards.start_menu(viber_user)
@@ -644,8 +643,7 @@ def location_manual_handler(viber_user, message, skip=False):
         'address': display_address,
     }
     json_body = json.dumps(body, ensure_ascii=False)
-    new_package = CustomCreate.create_package(viber_user.id, 'INSERT', 'application/json', 'kvb::address',
-                                              json_body)
+    new_package = CustomCreate.create_package('INSERT', 'application/json', 'kvb::address', json_body)
 
     return text, keyboard
 
@@ -874,8 +872,7 @@ def master_registration_page_submit(request):
 
         json_body = json.dumps(body)
 
-        new_package = CustomCreate.create_package(form_data["viber_id"], 'INSERT', "application/json", 'kvb_master',
-                                                  json_body)
+        new_package = CustomCreate.create_package('INSERT', "application/json", 'kvb_master', json_body, form_data["viber_id"])
 
         # Перенаправлення на сторінку "дякуємо за реєстрацію"
         return redirect('https://www.google.com.ua/')
@@ -920,8 +917,7 @@ def ViberUserToRabbitMQ(viber_user, operation):
     viber_user_json_data = viber_user_serializer.data
     json_data = json.dumps(viber_user_json_data, ensure_ascii=False).encode('utf-8')
     decoded_json_data = json_data.decode('utf-8')
-    new_package = CustomCreate.create_package(viber_user.viber_id, operation, 'application/json', 'kvb::viber_user',
-                                              decoded_json_data)
+    new_package = CustomCreate.create_package(operation, 'application/json', 'kvb::viber_user', decoded_json_data, viber_user.viber_id)
 
 
 def ServiceRequestToRabbitMQ(service_request, operation):
@@ -933,8 +929,7 @@ def ServiceRequestToRabbitMQ(service_request, operation):
         'position': service_request.position.codifier,
         'service': service_request.service.id
     }
-    new_package = CustomCreate.create_package(service_request.id, operation, 'application/json', 'kvb::service_request',
-                                              json.dumps(body))
+    new_package = CustomCreate.create_package(operation, 'application/json', 'kvb::service_request', json.dumps(body), service_request.id)
 
 
 # Функція записує меню у вайбер-користувача
