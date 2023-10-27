@@ -634,7 +634,7 @@ def location_manual_handler(viber_user, message, skip=False):
     print(display_address)
 
     viber_user.address = display_address
-    viber_user.menu = f'{viber_user.menu}:home'
+    viber_user.menu = f'{viber_user.menu}::home'
     viber_user.save()
     service = Service.objects.get(id=message.split('::')[1])
     text = f'Ви підтверджуєте заявку?\nПослуга: {service.name}\n\nМісце проведення: {display_address}'
