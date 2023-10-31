@@ -171,7 +171,7 @@ class ServiceRequest(models.Model):
             body['executor'] = executor.viber_id
         json_data = json.dumps(body, ensure_ascii=False).encode('utf-8')
         decoded_json_data = json_data.decode('utf-8')
-        new_package = CustomCreate.create_package(self.id, 'INSERT', 'application/json', 'kvb::service_request', decoded_json_data)
+        new_package = CustomCreate.create_package('INSERT', 'application/json', 'kvb::service_request', decoded_json_data, self.id)
 
 
 
