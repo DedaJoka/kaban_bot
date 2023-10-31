@@ -111,7 +111,7 @@ def keyboard_def(buttons, іnputfieldstate):
         "DefaultHeight": "false",
         "BgColor": config.colorBg_keyboard,
         "Buttons": buttons,
-        "InputFieldState": 'regular'
+        "InputFieldState": іnputfieldstate
     }
     return keyboard
 
