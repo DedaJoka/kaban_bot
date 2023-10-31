@@ -944,5 +944,20 @@ import pysnooper
 def test(viber_user):
     print("test")
     text = f'TEST'
-    keyboard = keyboards.star1_menu(viber_user)
+    keyboard = keyboards.start_menu(viber_user)
+
+    viberid2 = '0jc/IFy2BX8MqWXVVqRESg=='
+    user2 = ViberUser.objects.get(viber_id=viberid2)
+    keyboard2 = keyboards.start_menu(user2)
+    response_message = TextMessage(
+        text=f'Для продовження скористайтесь контекстним меню.',
+        keyboard=keyboard2,
+        min_api_version=6)
+    viber.send_messages(viberid2, [response_message])
+    save_menu(user2, 'start')
+
+
+    print('отправили сообщение')
+
+
     return text, keyboard
