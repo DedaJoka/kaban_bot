@@ -85,14 +85,13 @@ def button_back(text, img, bgimg, actionbody, opacity=100):
 
 # {viber_user.once}&&
 
-def button_home(viber_user, bgimg):
+def button_home(viber_user):
     button = {
         "Columns": 1,
         "Rows": 1,
         "Text": "До головного меню",
-        "Image": f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/ico/home.png',
+        "Image": f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1_home.png',
         "ImageScaleType": "fit",
-        "BgMedia": bgimg,
         "BgMediaScaleType": "fit",
         "BgColor": config.colorBg_button,
         "ActionType": "reply",
@@ -102,7 +101,7 @@ def button_home(viber_user, bgimg):
     return button
 
 
-# buttons.append(button_home(viber_user, f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1/gray_light.png'))
+# buttons.append(button_home(viber_user))
 
 
 def keyboard_def(buttons, іnputfieldstate):
@@ -236,7 +235,7 @@ def master_requests(viber_user):
                                # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
                                f'{viber_user.once}&&start',
                                ))
-    buttons.append(button_home(viber_user, f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1/gray_light.png'))
+    buttons.append(button_home(viber_user))
 
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
@@ -265,7 +264,7 @@ def master_service_requests(viber_user, prefix, service_requests):
                                # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
                                f'{viber_user.once}&&master_requests',
                                ))
-    buttons.append(button_home(viber_user, f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1/gray_light.png'))
+    buttons.append(button_home(viber_user))
 
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
@@ -317,7 +316,7 @@ def master_service_request(viber_user, prefix, service_request):
                                # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
                                f'{viber_user.once}&&master_requests::{prefix}',
                                ))
-    buttons.append(button_home(viber_user, f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1/gray_light.png'))
+    buttons.append(button_home(viber_user))
 
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
@@ -341,7 +340,7 @@ def service_0(viber_user):
     buttons.append(button(6, 1,  # Columns & Rows
                           f'<font size=22 color="#FFFFFF"><b>Мої заявки</b></font>',
                           # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
-                          f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/my_requests.png',
+                          f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_my_requests.png',
                           # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
                           f'',
                           # actiontype - ТИП ОТВЕТА
@@ -357,7 +356,7 @@ def service_0(viber_user):
                                # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
                                f'{viber_user.once}&&start',
                                ))
-    buttons.append(button_home(viber_user, f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1/gray_light.png'))
+    buttons.append(button_home(viber_user))
 
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
@@ -401,8 +400,7 @@ def service_1(viber_user, service_id):
                                        # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
                                        f'{viber_user.once}&&service',
                                        ))
-        buttons.append(
-            button_home(viber_user, f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1/gray_light.png'))
+        buttons.append(button_home(viber_user))
     else:
         services = Service.objects.get(id=service_id)
         text = f'Ви обрали "{services}".\nНадайте місце, де буде відбуватися послуга. Ви можете поширити свою геолокацію або вказати власноруч адресу по єтапно.'
@@ -446,8 +444,7 @@ def service_1(viber_user, service_id):
                                        # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
                                        f'{viber_user.once}&&service',
                                        ))
-        buttons.append(
-            button_home(viber_user, f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1/gray_light.png'))
+        buttons.append(button_home(viber_user))
 
     keyboard = keyboard_def(buttons, "hidden")
     return text, keyboard
@@ -477,8 +474,7 @@ def my_requests(viber_user, service_requests):
                                # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
                                f'{viber_user.once}&&service',
                                ))
-    buttons.append(
-        button_home(viber_user, f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1/gray_light.png'))
+    buttons.append(button_home(viber_user))
 
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
@@ -505,8 +501,7 @@ def my_request_cancel(viber_user, service_request):
                                # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
                                f'{viber_user.once}&&my_requests',
                                ))
-    buttons.append(
-        button_home(viber_user, f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1/gray_light.png'))
+    buttons.append(button_home(viber_user))
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
 
@@ -554,8 +549,7 @@ def my_request_confirmation(viber_user, service_request):
                                # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
                                f'{viber_user.once}&&my_requests',
                                ))
-    buttons.append(
-        button_home(viber_user, f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1/gray_light.png'))
+    buttons.append(button_home(viber_user))
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
 
@@ -592,8 +586,7 @@ def my_request_done(viber_user, service_request):
                                # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
                                f'{viber_user.once}&&my_requests',
                                ))
-    buttons.append(
-        button_home(viber_user, f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1/gray_light.png'))
+    buttons.append(button_home(viber_user))
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
 
@@ -629,7 +622,7 @@ def location_region_startswith(viber_user, message):
                                # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
                                f'{viber_user.once}&&{back_result}',
                                ))
-    buttons.append(button_home(viber_user, f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1/gray_light.png'))
+    buttons.append(button_home(viber_user))
 
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
@@ -664,7 +657,7 @@ def location_region_picker(viber_user, message):
                                # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
                                f'{viber_user.once}&&{back_result}',
                                ))
-    buttons.append(button_home(viber_user, f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1/gray_light.png'))
+    buttons.append(button_home(viber_user))
 
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
@@ -703,7 +696,7 @@ def location_populated_centre_startswith(viber_user, message):
                                # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
                                f'{viber_user.once}&&{back_result}',
                                ))
-    buttons.append(button_home(viber_user, f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1/gray_light.png'))
+    buttons.append(button_home(viber_user))
 
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
@@ -724,31 +717,29 @@ def location_populated_centre_picker(viber_user, message):
 
     if page.has_previous():
         buttons.append(button(2, 1,  # Columns & Rows
-                              f'<font size=22 color="#FFFFFF"><b>◀◀</b></font>',
+                              f'<font size=22 color="#FFFFFF"><b>Перша</b></font>',
                               # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
-                              f'',
+                              f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/2x1_first_page.png',
                               # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
-                              f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/2x1/green.png',
+                              f'',
                               # actiontype - ТИП ОТВЕТА
                               'reply',
                               # actionbody - ОТВЕТ
-                              f"{viber_user.once}&&{message_without_page}::1",
+                              f"{viber_user.once}&&{message_without_page}::1", 0
                               ))
         buttons.append(button(4, 1,  # Columns & Rows
-                              f'<font size=22 color="#FFFFFF"><b>◀ Попередня сторінка</b></font>',
+                              f'<font size=22 color="#FFFFFF"><b>Попередня сторінка</b></font>',
                               # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
-                              f'',
+                              f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_previous_page.png',
                               # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
-                              f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/4x1/green.png',
+                              f'',
                               # actiontype - ТИП ОТВЕТА
                               'reply',
                               # actionbody - ОТВЕТ
-                              f"{viber_user.once}&&{message_without_page}::{page.previous_page_number()}"
+                              f"{viber_user.once}&&{message_without_page}::{page.previous_page_number()}", 0
                               ))
 
-
-
-    if region.id == 24: #Київська
+    if region.id == 24:  # Київська
         buttons.append(button(6, 1,  # Columns & Rows
                               f'<font size=18 color="#FFFFFF"><b>Київ</b></font><br><font size=12 color="#FFFFFF"><b>Столиця України</b></font>',
                               # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
@@ -776,26 +767,26 @@ def location_populated_centre_picker(viber_user, message):
 
     if page.has_next():
         buttons.append(button(4, 1,  # Columns & Rows
-                              f'<font size=22 color="#FFFFFF"><b>Наступна сторінка ▶</b></font>',
+                              f'<font size=22 color="#FFFFFF"><b>Наступна сторінка</b></font>',
                               # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
-                              f'',
+                              f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_next_page.png',
                               # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
-                              f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/4x1/green.png',
+                              f'',
                               # actiontype - ТИП ОТВЕТА
                               'reply',
                               # actionbody - ОТВЕТ
-                              f"{viber_user.once}&&{message_without_page}::{page.next_page_number()}",
+                              f"{viber_user.once}&&{message_without_page}::{page.next_page_number()}", 0
                               ))
         buttons.append(button(2, 1,  # Columns & Rows
-                              f'<font size=22 color="#FFFFFF"><b>▶▶</b></font>',
+                              f'<font size=22 color="#FFFFFF"><b>Остання</b></font>',
                               # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
-                              f'',
+                              f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/2x1_last_page.png',
                               # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
-                              f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/2x1/green.png',
+                              f'',
                               # actiontype - ТИП ОТВЕТА
                               'reply',
                               # actionbody - ОТВЕТ
-                              f"{viber_user.once}&&{message_without_page}::{p.num_pages}"
+                              f"{viber_user.once}&&{message_without_page}::{p.num_pages}", 0
                               ))
 
     back_result = "::".join(message_split[:-2])
@@ -807,7 +798,7 @@ def location_populated_centre_picker(viber_user, message):
                                # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
                                f'{viber_user.once}&&{back_result}',
                                ))
-    buttons.append(button_home(viber_user, f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1/gray_light.png'))
+    buttons.append(button_home(viber_user))
 
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
@@ -843,16 +834,24 @@ def start(viber_user):
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
 
+
 # "Налаштування"
 def setting(viber_user):
     buttons = []
     buttons.append(
         button_img(6, 1, 'Стати майстром', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/master.png', 'reply',
                    f'{viber_user.once}&&master_registration'))
-    # buttons.append(button_img(6, 1, 'Змінити мову', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/language.png', 'reply', f'{viber_user.once}change_language'))
-    buttons.append(button_img(6, 1, 'Змінити номер телефону',
-                              f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/change_phone_number_1.png',
-                              'reply', f'{viber_user.once}&&change_phone_number'))
+    buttons.append(button(6, 1,  # Columns & Rows
+                          f'<font size=22 color="#FFFFFF"><b>Змінити номер телефону</b></font>',
+                          # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
+                          f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_change_phone_number.png',
+                          # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
+                          f'',
+                          # actiontype - ТИП ОТВЕТА
+                          'reply',
+                          # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
+                          f'{viber_user.once}&&change_phone_number', 0
+                          ))
     buttons.append(button_back(f'<font size=22 color="#404040"><b>Назад</b></font>',
                                # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
                                f'',
@@ -861,7 +860,7 @@ def setting(viber_user):
                                # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
                                f'{viber_user.once}&&start',
                                ))
-    buttons.append(button_home(viber_user, f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1/gray_light.png'))
+    buttons.append(button_home(viber_user))
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
 
@@ -889,8 +888,7 @@ def phone_number(viber_user):
                                    # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
                                    f'{viber_user.once}&&setting',
                                    ))
-        buttons.append(
-            button_home(viber_user, f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1/gray_light.png'))
+        buttons.append(button_home(viber_user))
 
     keyboard = keyboard_def(buttons, "regular")
     return keyboard
@@ -965,7 +963,7 @@ def master_registration(viber_user):
                                # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
                                f'{viber_user.once}&&setting',
                                ))
-    buttons.append(button_home(viber_user, f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/1x1/gray_light.png'))
+    buttons.append(button_home(viber_user))
     keyboard = keyboard_def(buttons, "hidden")
     return keyboard
 
