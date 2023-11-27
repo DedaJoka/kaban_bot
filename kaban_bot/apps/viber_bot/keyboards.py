@@ -739,7 +739,20 @@ def location_populated_centre_picker(viber_user, message):
                               f"{viber_user.once}&&{message_without_page}::{page.previous_page_number()}", 0
                               ))
 
-    if region.id == 24:  # Київська
+    # Київська
+    if region.id == 24:
+        buttons.append(button(6, 1,  # Columns & Rows
+                              f'<font size=18 color="#FFFFFF"><b>Київ</b></font><br><font size=12 color="#FFFFFF"><b>Столиця України</b></font>',
+                              # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
+                              f'',
+                              # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
+                              f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1/green.png',
+                              # actiontype - ТИП ОТВЕТА
+                              'reply',
+                              # actionbody - ОТВЕТ
+                              f"{viber_user.once}&&{message}::7",
+                              ))
+    elif region.id == 49:
         buttons.append(button(6, 1,  # Columns & Rows
                               f'<font size=18 color="#FFFFFF"><b>Київ</b></font><br><font size=12 color="#FFFFFF"><b>Столиця України</b></font>',
                               # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
