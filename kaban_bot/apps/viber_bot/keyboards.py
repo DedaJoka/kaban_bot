@@ -764,30 +764,74 @@ def location_populated_centre_picker(viber_user, message):
                               f"{viber_user.once}&&{message_without_page}::{page.previous_page_number()}", 0
                               ))
 
-    if region.id == 10 or region.name == 'Київська':
-        buttons.append(button(6, 1,  # Columns & Rows
-                              f'<font size=18 color="#FFFFFF"><b>Київ</b></font><br><font size=12 color="#FFFFFF"><b>Столиця України</b></font>',
-                              # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
-                              f'',
-                              # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
-                              f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1/green.png',
-                              # actiontype - ТИП ОТВЕТА
-                              'reply',
-                              # actionbody - ОТВЕТ
-                              f"{viber_user.once}&&{message}::7",
-                              ))
-    elif region.id == 49:
-        buttons.append(button(6, 1,  # Columns & Rows
-                              f'<font size=18 color="#FFFFFF"><b>Київ</b></font><br><font size=12 color="#FFFFFF"><b>Столиця України</b></font>',
-                              # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
-                              f'',
-                              # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
-                              f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1/green.png',
-                              # actiontype - ТИП ОТВЕТА
-                              'reply',
-                              # actionbody - ОТВЕТ
-                              f"{viber_user.once}&&{message}::7",
-                              ))
+
+    def location_buttons(name, title, id):
+        button = {
+            "Columns": 6,
+            "Rows": 1,
+            "Text": f'<font size=18 color="#FFFFFF"><b>{name}</b></font><br><font size=12 color="#FFFFFF"><b>{title}</b></font>',
+            "Image": f'',
+            "ImageScaleType": "fit",
+            "BgMedia": f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1/green.png',
+            "BgMediaScaleType": "fit",
+            "BgColor": config.colorBg_button,
+            "ActionType": "reply",
+            "ActionBody": f"{viber_user.once}&&{message}::{id}"
+        }
+        return button
+
+
+    if region.id == 1 or region.name == 'Автономна Республіка Крим':
+        buttons.append(location_buttons('Сімферополь', 'Столиця', '2349'))
+    elif region.id == 2 or region.name == 'Вінницька':
+        buttons.append(location_buttons('Вінниця', 'Обласний центр', '2148'))
+    elif region.id == 3 or region.name == 'Волинська':
+        buttons.append(location_buttons('Луцьк', 'Обласний центр', '2274'))
+    elif region.id == 4 or region.name == 'Дніпропетровська':
+        buttons.append(location_buttons('Дніпро', 'Обласний центр', '2182'))
+    elif region.id == 5 or region.name == 'Донецька':
+        buttons.append(location_buttons('Донецьк', 'Обласний центр', '2189'))
+    elif region.id == 6 or region.name == 'Житомирська':
+        buttons.append(location_buttons('Житомир', 'Обласний центр', '2200'))
+    elif region.id == 7 or region.name == 'Закарпатська':
+        buttons.append(location_buttons('Ужгород', 'Обласний центр', '2371'))
+    elif region.id == 8 or region.name == 'Запорізька':
+        buttons.append(location_buttons('Запоріжжя', 'Обласний центр', '2206'))
+    elif region.id == 9 or region.name == 'Івано-Франківська':
+        buttons.append(location_buttons('Івано-Франківськ', 'Обласний центр', '2220'))
+    elif region.id == 10 or region.name == 'Київська':
+        buttons.append(location_buttons('Київ', 'Столиця України', '2393'))
+    elif region.id == 11 or region.name == 'Кіровоградська':
+        buttons.append(location_buttons('Кропивницький', 'Обласний центр', '2265'))
+    elif region.id == 12 or region.name == 'Луганська':
+        buttons.append(location_buttons('Луганськ', 'Обласний центр', '2273'))
+    elif region.id == 13 or region.name == 'Львівська':
+        buttons.append(location_buttons('Львів', 'Обласний центр', '2276'))
+    elif region.id == 14 or region.name == 'Миколаївська':
+        buttons.append(location_buttons('Миколаїв', 'Обласний центр', '2284'))
+    elif region.id == 15 or region.name == 'Одеська':
+        buttons.append(location_buttons('Одеса', 'Обласний центр', '2311'))
+    elif region.id == 16 or region.name == 'Полтавська':
+        buttons.append(location_buttons('Полтава', 'Обласний центр', '2330'))
+    elif region.id == 17 or region.name == 'Рівненська':
+        buttons.append(location_buttons('Рівне', 'Обласний центр', '2336'))
+    elif region.id == 18 or region.name == 'Сумська':
+        buttons.append(location_buttons('Суми', 'Обласний центр', '2365'))
+    elif region.id == 19 or region.name == 'Тернопільська':
+        buttons.append(location_buttons('Тернопіль', 'Обласний центр', '2367'))
+    elif region.id == 20 or region.name == 'Харківська':
+        buttons.append(location_buttons('Харків', 'Обласний центр', '2375'))
+    elif region.id == 21 or region.name == 'Херсонська':
+        buttons.append(location_buttons('Херсон', 'Обласний центр', '2376'))
+    elif region.id == 22 or region.name == 'Хмельницька':
+        buttons.append(location_buttons('Хмельницький', 'Обласний центр', '2377'))
+    elif region.id == 23 or region.name == 'Черкаська':
+        buttons.append(location_buttons('Черкаси', 'Обласний центр', '2382'))
+    elif region.id == 24 or region.name == 'Чернівецька':
+        buttons.append(location_buttons('Чернівці', 'Обласний центр', '2383'))
+    elif region.id == 25 or region.name == 'Чернігівська':
+        buttons.append(location_buttons('Чернігів', 'Обласний центр', '2384'))
+
 
     for position in page:
         buttons.append(button(6, 1,  # Columns & Rows
