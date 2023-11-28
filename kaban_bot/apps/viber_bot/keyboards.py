@@ -44,6 +44,7 @@ def button(columns, rows, text, img, bgimg, actiontype, actionbody, opacity=100)
     }
     return button
 
+
 def silent_button(columns, rows):
     button = {
         "Columns": columns,
@@ -764,7 +765,6 @@ def location_populated_centre_picker(viber_user, message):
                               f"{viber_user.once}&&{message_without_page}::{page.previous_page_number()}", 0
                               ))
 
-
     def location_buttons(name, title, id):
         button = {
             "Columns": 6,
@@ -780,10 +780,9 @@ def location_populated_centre_picker(viber_user, message):
         }
         return button
 
-
-    if region.id == 1 or region.name == 'Автономна Республіка Крим':
+    if (region.id == 1 or region.name == 'Автономна Республіка Крим') and message_split[5] == "C":
         buttons.append(location_buttons('Сімферополь', 'Столиця', '2349'))
-    elif region.id == 2 or region.name == 'Вінницька':
+    elif (region.id == 2 or region.name == 'Вінницька') and message_split[5] == "В":
         buttons.append(location_buttons('Вінниця', 'Обласний центр', '2148'))
     elif region.id == 3 or region.name == 'Волинська':
         buttons.append(location_buttons('Луцьк', 'Обласний центр', '2274'))
@@ -831,7 +830,6 @@ def location_populated_centre_picker(viber_user, message):
         buttons.append(location_buttons('Чернівці', 'Обласний центр', '2383'))
     elif region.id == 25 or region.name == 'Чернігівська':
         buttons.append(location_buttons('Чернігів', 'Обласний центр', '2384'))
-
 
     for position in page:
         buttons.append(button(6, 1,  # Columns & Rows
