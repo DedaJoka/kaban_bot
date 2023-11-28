@@ -784,51 +784,51 @@ def location_populated_centre_picker(viber_user, message):
         buttons.append(location_buttons('Сімферополь', 'Столиця', '2349'))
     elif (region.id == 2 or region.name == 'Вінницька') and message_split[5] == "В":
         buttons.append(location_buttons('Вінниця', 'Обласний центр', '2148'))
-    elif region.id == 3 or region.name == 'Волинська':
+    elif (region.id == 3 or region.name == 'Волинська') and message_split[5] == "Л":
         buttons.append(location_buttons('Луцьк', 'Обласний центр', '2274'))
-    elif region.id == 4 or region.name == 'Дніпропетровська':
+    elif (region.id == 4 or region.name == 'Дніпропетровська') and message_split[5] == "Д":
         buttons.append(location_buttons('Дніпро', 'Обласний центр', '2182'))
-    elif region.id == 5 or region.name == 'Донецька':
+    elif (region.id == 5 or region.name == 'Донецька') and message_split[5] == "Д":
         buttons.append(location_buttons('Донецьк', 'Обласний центр', '2189'))
-    elif region.id == 6 or region.name == 'Житомирська':
+    elif (region.id == 6 or region.name == 'Житомирська') and message_split[5] == "Ж":
         buttons.append(location_buttons('Житомир', 'Обласний центр', '2200'))
-    elif region.id == 7 or region.name == 'Закарпатська':
+    elif (region.id == 7 or region.name == 'Закарпатська') and message_split[5] == "У":
         buttons.append(location_buttons('Ужгород', 'Обласний центр', '2371'))
-    elif region.id == 8 or region.name == 'Запорізька':
+    elif (region.id == 8 or region.name == 'Запорізька') and message_split[5] == "З":
         buttons.append(location_buttons('Запоріжжя', 'Обласний центр', '2206'))
-    elif region.id == 9 or region.name == 'Івано-Франківська':
+    elif (region.id == 9 or region.name == 'Івано-Франківська') and message_split[5] == "І":
         buttons.append(location_buttons('Івано-Франківськ', 'Обласний центр', '2220'))
-    elif region.id == 10 or region.name == 'Київська':
+    elif (region.id == 10 or region.name == 'Київська') and message_split[5] == "К":
         buttons.append(location_buttons('Київ', 'Столиця України', '2393'))
-    elif region.id == 11 or region.name == 'Кіровоградська':
+    elif (region.id == 11 or region.name == 'Кіровоградська') and message_split[5] == "К":
         buttons.append(location_buttons('Кропивницький', 'Обласний центр', '2265'))
-    elif region.id == 12 or region.name == 'Луганська':
+    elif (region.id == 12 or region.name == 'Луганська') and message_split[5] == "Л":
         buttons.append(location_buttons('Луганськ', 'Обласний центр', '2273'))
-    elif region.id == 13 or region.name == 'Львівська':
+    elif (region.id == 13 or region.name == 'Львівська') and message_split[5] == "Л":
         buttons.append(location_buttons('Львів', 'Обласний центр', '2276'))
-    elif region.id == 14 or region.name == 'Миколаївська':
+    elif (region.id == 14 or region.name == 'Миколаївська') and message_split[5] == "М":
         buttons.append(location_buttons('Миколаїв', 'Обласний центр', '2284'))
-    elif region.id == 15 or region.name == 'Одеська':
+    elif (region.id == 15 or region.name == 'Одеська') and message_split[5] == "О":
         buttons.append(location_buttons('Одеса', 'Обласний центр', '2311'))
-    elif region.id == 16 or region.name == 'Полтавська':
+    elif (region.id == 16 or region.name == 'Полтавська') and message_split[5] == "П":
         buttons.append(location_buttons('Полтава', 'Обласний центр', '2330'))
-    elif region.id == 17 or region.name == 'Рівненська':
+    elif (region.id == 17 or region.name == 'Рівненська') and message_split[5] == "Р":
         buttons.append(location_buttons('Рівне', 'Обласний центр', '2336'))
-    elif region.id == 18 or region.name == 'Сумська':
+    elif (region.id == 18 or region.name == 'Сумська') and message_split[5] == "С":
         buttons.append(location_buttons('Суми', 'Обласний центр', '2365'))
-    elif region.id == 19 or region.name == 'Тернопільська':
+    elif (region.id == 19 or region.name == 'Тернопільська') and message_split[5] == "Т":
         buttons.append(location_buttons('Тернопіль', 'Обласний центр', '2367'))
-    elif region.id == 20 or region.name == 'Харківська':
+    elif (region.id == 20 or region.name == 'Харківська') and message_split[5] == "Х":
         buttons.append(location_buttons('Харків', 'Обласний центр', '2375'))
-    elif region.id == 21 or region.name == 'Херсонська':
+    elif (region.id == 21 or region.name == 'Херсонська') and message_split[5] == "Х":
         buttons.append(location_buttons('Херсон', 'Обласний центр', '2376'))
-    elif region.id == 22 or region.name == 'Хмельницька':
+    elif (region.id == 22 or region.name == 'Хмельницька') and message_split[5] == "Х":
         buttons.append(location_buttons('Хмельницький', 'Обласний центр', '2377'))
-    elif region.id == 23 or region.name == 'Черкаська':
+    elif (region.id == 23 or region.name == 'Черкаська') and message_split[5] == "Ч":
         buttons.append(location_buttons('Черкаси', 'Обласний центр', '2382'))
-    elif region.id == 24 or region.name == 'Чернівецька':
+    elif (region.id == 24 or region.name == 'Чернівецька') and message_split[5] == "Ч":
         buttons.append(location_buttons('Чернівці', 'Обласний центр', '2383'))
-    elif region.id == 25 or region.name == 'Чернігівська':
+    elif (region.id == 25 or region.name == 'Чернігівська') and message_split[5] == "Ч":
         buttons.append(location_buttons('Чернігів', 'Обласний центр', '2384'))
 
     for position in page:
