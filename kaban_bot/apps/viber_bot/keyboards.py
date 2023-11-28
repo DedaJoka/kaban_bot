@@ -44,6 +44,18 @@ def button(columns, rows, text, img, bgimg, actiontype, actionbody, opacity=100)
     }
     return button
 
+def silent_button(columns, rows):
+    button = {
+        "Columns": columns,
+        "Rows": rows,
+        "Text": "",
+        "ActionType": "",
+        "ActionBody": "",
+        "Silent": "true",
+        "TextOpacity": 0,
+    }
+    return button
+
 
 # buttons.append(button(6, 1, # Columns & Rows
 # f'<font size=22 color="#FFFFFF"><b>СюдаПисатьТекст</b></font>',
@@ -617,17 +629,7 @@ def location_region_startswith(viber_user, message):
     number_required_buttons = number_lines * 6
     number_empty_buttons = number_required_buttons - unique_initials_count
     for _ in range(number_empty_buttons):
-        buttons.append(button(1, 1,  # Columns & Rows
-                              f'',
-                              # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
-                              f'',
-                              # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
-                              f'',
-                              # actiontype - ТИП ОТВЕТА
-                              '',
-                              # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
-                              f'', 0
-                              ))
+        buttons.append(silent_button(1, 1))
 
     message_split = message.split("::")
     back_result = "::".join(message_split[:-1])
@@ -707,17 +709,7 @@ def location_populated_centre_startswith(viber_user, message):
     number_required_buttons = number_lines * 6
     number_empty_buttons = number_required_buttons - unique_initials_count
     for _ in range(number_empty_buttons):
-        buttons.append(button(1, 1,  # Columns & Rows
-                              f'',
-                              # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
-                              f'',
-                              # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
-                              f'',
-                              # actiontype - ТИП ОТВЕТА
-                              '',
-                              # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
-                              f'', 0
-                              ))
+        buttons.append(silent_button(1, 1))
 
     message_split = message.split("::")
     back_result = "::".join(message_split[:-1])
