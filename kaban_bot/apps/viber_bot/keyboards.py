@@ -1,4 +1,5 @@
 import pytz
+import math
 
 from datetime import date, datetime, timedelta
 from . import config
@@ -612,6 +613,22 @@ def location_region_startswith(viber_user, message):
                                   f'{viber_user.once}&&{message}::{unique_initial}',
                                   ))
 
+    number_lines = math.ceil(unique_initials_count / 6)
+    number_required_buttons = number_lines * 6
+    number_empty_buttons = number_required_buttons - unique_initials_count
+    for _ in range(number_empty_buttons):
+        buttons.append(button(1, 1,  # Columns & Rows
+                              f'',
+                              # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
+                              f'',
+                              # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
+                              f'',
+                              # actiontype - ТИП ОТВЕТА
+                              '',
+                              # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
+                              f'', 0
+                              ))
+
     message_split = message.split("::")
     back_result = "::".join(message_split[:-1])
     buttons.append(button_back(f'<font size=22 color="#404040"><b>Назад</b></font>',
@@ -686,6 +703,22 @@ def location_populated_centre_startswith(viber_user, message):
                                   f'{viber_user.once}&&{message}::{unique_initial}::1',
                                   ))
 
+    number_lines = math.ceil(unique_initials_count / 6)
+    number_required_buttons = number_lines * 6
+    number_empty_buttons = number_required_buttons - unique_initials_count
+    for _ in range(number_empty_buttons):
+        buttons.append(button(1, 1,  # Columns & Rows
+                              f'',
+                              # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
+                              f'',
+                              # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
+                              f'',
+                              # actiontype - ТИП ОТВЕТА
+                              '',
+                              # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
+                              f'', 0
+                              ))
+
     message_split = message.split("::")
     back_result = "::".join(message_split[:-1])
     buttons.append(button_back(f'<font size=22 color="#404040"><b>Назад</b></font>',
@@ -739,8 +772,7 @@ def location_populated_centre_picker(viber_user, message):
                               f"{viber_user.once}&&{message_without_page}::{page.previous_page_number()}", 0
                               ))
 
-    # Київська
-    if region.id == 24:
+    if region.id == 10 or region.name == 'Київська':
         buttons.append(button(6, 1,  # Columns & Rows
                               f'<font size=18 color="#FFFFFF"><b>Київ</b></font><br><font size=12 color="#FFFFFF"><b>Столиця України</b></font>',
                               # img - картинка (НЕ ОБЯЗАТЕЛЬНО)

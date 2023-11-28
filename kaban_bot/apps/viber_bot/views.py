@@ -110,7 +110,10 @@ def message(request_dict):
     global global_text_message, global_keyboard_message, global_viber_id
     # Отримуємо інформацію
     message_type = request_dict['message']['type']
-    message_text = request_dict['message']['text']
+    try:
+        message_text = request_dict['message']['text']
+    except:
+        return
     global_viber_id = request_dict['sender']['id']
     viber_user = ViberUser.objects.get(viber_id=global_viber_id)
 
