@@ -917,9 +917,17 @@ def start(viber_user):
 # "Налаштування"
 def setting(viber_user):
     buttons = []
-    buttons.append(
-        button_img(6, 1, 'Стати майстром', f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/master.png', 'reply',
-                   f'{viber_user.once}&&master_registration'))
+    buttons.append(button(6, 1,  # Columns & Rows
+                          f'<font size=22 color="#FFFFFF"><b>Стати майстром</b></font>',
+                          # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
+                          f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1_master.png',
+                          # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
+                          f'',
+                          # actiontype - ТИП ОТВЕТА
+                          'reply',
+                          # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
+                          f'{viber_user.once}&&master_registration', 0
+                          ))
     buttons.append(button(6, 1,  # Columns & Rows
                           f'<font size=22 color="#FFFFFF"><b>Змінити номер телефону</b></font>',
                           # img - картинка (НЕ ОБЯЗАТЕЛЬНО)

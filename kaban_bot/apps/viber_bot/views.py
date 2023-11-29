@@ -122,15 +122,18 @@ def message(request_dict):
 
     need_handled = False
     if not re.match(r"^\d+&&", message_text):
-        if re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}$', viber_user.menu) and not re.match(r"https://", message_text):
+        if re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}$',
+                    viber_user.menu) and not re.match(r"https://", message_text):
             modified_street = message_text.replace(" ", "_")
             message = viber_user.menu + '::' + modified_street
             need_handled = True
-        elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street$', viber_user.menu) and not re.match(r"https://", message_text):
+        elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street$',
+                      viber_user.menu) and not re.match(r"https://", message_text):
             modified_number = message_text.replace(" ", "_")
             message = viber_user.menu + '::' + modified_number
             need_handled = True
-        elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street::number$', viber_user.menu) and not re.match(r"https://", message_text):
+        elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street::number$',
+                      viber_user.menu) and not re.match(r"https://", message_text):
             message = viber_user.menu + '::' + message_text
             need_handled = True
         elif viber_user.menu == 'phone_number' and message_text != 'setting':
@@ -231,19 +234,27 @@ def message(request_dict):
                 save_menu(viber_user, message)
                 global_text_message = f'Введіть назву Вашої вулиці\nНаприклад:\n\tвул. Богдана Хмельницького\n\tпровулок Незалежності'
                 global_keyboard_message = keyboards.start_input(viber_user)
-            elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::.+$', message) and re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}$', viber_user.menu):
+            elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::.+$',
+                          message) and re.match(
+                    r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}$', viber_user.menu):
                 handling = location_manual_street_handler(viber_user, message)
                 global_text_message = handling[0]
                 global_keyboard_message = handling[1]
-            elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street::[\w\\/а-яА-Яa-zA-Z]+$', message):
+            elif re.match(
+                    r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street::[\w\\/а-яА-Яa-zA-Z]+$',
+                    message):
                 handling = location_manual_number_handler(viber_user, message)
                 global_text_message = handling[0]
                 global_keyboard_message = handling[1]
-            elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street::number::\d+$', message):
+            elif re.match(
+                    r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street::number::\d+$',
+                    message):
                 handling = location_manual_handler(viber_user, message)
                 global_text_message = handling[0]
                 global_keyboard_message = handling[1]
-            elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street::number::skip$', message):
+            elif re.match(
+                    r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street::number::skip$',
+                    message):
                 handling = location_manual_handler(viber_user, message, True)
                 global_text_message = handling[0]
                 global_keyboard_message = handling[1]
@@ -401,11 +412,10 @@ def message(request_dict):
 # Мої заявки
 def my_requests(viber_user):
     fourteen_days_ago = datetime.now() - timedelta(days=14)
-    excluded_status_codes = [3, 7, 8, 9]
+    excluded_status_codes = [2, 3, 7, 8, 9]
     service_requests = ServiceRequest.objects.filter(
         Q(customer=viber_user) &
-        ~Q(status_code__in=excluded_status_codes) &
-        Q(modifiedon__gte=fourteen_days_ago))
+        (~Q(status_code__in=excluded_status_codes) | (Q(status_code=2) & Q(modifiedon__gte=fourteen_days_ago))))
     text = ""
     if not service_requests:
         text = "Від Вас заявок не знайдено"
@@ -480,7 +490,8 @@ def my_request_assessment(viber_user, service_request, response):
         'type_assessment': "executor",
         'assessment': response,
     }
-    new_package = CustomCreate.create_package("INSERT", 'application/json', 'kvb::assessment', json.dumps(body), service_request.id)
+    new_package = CustomCreate.create_package("INSERT", 'application/json', 'kvb::assessment', json.dumps(body),
+                                              service_request.id)
 
     text = f'Дякуємо за Вашу оцінку.\nДля продовження скористайтесь контекстним меню.'
     keyboard = keyboards.start_menu(viber_user)
@@ -666,6 +677,7 @@ def location_manual_street_handler(viber_user, message):
     keyboard = keyboards.start_input(viber_user)
 
     return text, keyboard
+
 
 def location_manual_number_handler(viber_user, message):
     message_split = message.split("::")
@@ -876,7 +888,8 @@ def master_registration_page_submit(request):
 
         json_body = json.dumps(body)
 
-        new_package = CustomCreate.create_package('INSERT', "application/json", 'kvb_master', json_body, form_data["viber_id"])
+        new_package = CustomCreate.create_package('INSERT', "application/json", 'kvb_master', json_body,
+                                                  form_data["viber_id"])
 
         # Перенаправлення на сторінку "дякуємо за реєстрацію"
         return redirect('https://www.google.com.ua/')
@@ -921,7 +934,8 @@ def ViberUserToRabbitMQ(viber_user, operation):
     viber_user_json_data = viber_user_serializer.data
     json_data = json.dumps(viber_user_json_data, ensure_ascii=False).encode('utf-8')
     decoded_json_data = json_data.decode('utf-8')
-    new_package = CustomCreate.create_package(operation, 'application/json', 'kvb::viber_user', decoded_json_data, viber_user.viber_id)
+    new_package = CustomCreate.create_package(operation, 'application/json', 'kvb::viber_user', decoded_json_data,
+                                              viber_user.viber_id)
 
 
 def ServiceRequestToRabbitMQ(service_request, operation):
@@ -933,7 +947,8 @@ def ServiceRequestToRabbitMQ(service_request, operation):
         'position': service_request.position.codifier,
         'service': service_request.service.id
     }
-    new_package = CustomCreate.create_package(operation, 'application/json', 'kvb::service_request', json.dumps(body), service_request.id)
+    new_package = CustomCreate.create_package(operation, 'application/json', 'kvb::service_request', json.dumps(body),
+                                              service_request.id)
 
 
 # Функція записує меню у вайбер-користувача
@@ -941,7 +956,9 @@ def save_menu(viber_user, menu):
     viber_user.menu = menu
     viber_user.save()
 
+
 import pysnooper
+
 
 # @pysnooper.snoop()
 def test(viber_user):
@@ -953,6 +970,5 @@ def test(viber_user):
 
     for i in positions:
         print(f'{i.id} - {i.name}')
-
 
     return text, keyboard
