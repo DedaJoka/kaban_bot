@@ -1,5 +1,7 @@
 import json
 import re
+import time
+
 import geocoder
 import os
 import base64
@@ -74,8 +76,11 @@ def send(viber_user_id):
             text=global_text_message,
             keyboard=global_keyboard_message,
             min_api_version=6)
+        now = time.time()
+        print(now, 'before send')
         viber.send_messages(viber_user_id, [response_message])
-        print('отправили сообщение')
+        print(now, 'отправили сообщение')
+
     else:
         print(
             f'НЕЗАШЛИ в условие send\n\t\tglobal_text_message - {global_text_message}\n\t\tglobal_viber_id - {global_viber_id}')
