@@ -1001,7 +1001,7 @@ def start_input(viber_user):
 def skip(viber_user, text):
     buttons = []
     buttons.append(button(6, 1,  # Columns & Rows
-                          f'<font size=22 color="#404040"><b>Пропустить</b></font>',
+                          f'<font size=22 color="#404040"><b>Пропустити</b></font>',
                           # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
                           f'',
                           # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
