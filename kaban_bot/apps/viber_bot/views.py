@@ -288,13 +288,16 @@ def message(request_dict):
                 global_text_message = handling[0]
                 global_keyboard_message = handling[1]
             elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::assessment$', message):
-                global_text_message = f'Оберіть оцінку від 1 до 5, де 1 - це найнижча оцінка, а 5 - найвища'
+                global_text_message = f'Оцініть кваліфікацію майстра! Оберіть оцінку від 1 до 5, де 1 - це найнижча оцінка, а 5 - найвища'
                 global_keyboard_message = keyboards.zero_to_five(viber_user, message)
             elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::assessment::\d$', message):
+                global_text_message = f'Оцініть ввічливість майстра! Оберіть оцінку від 1 до 5, де 1 - це найнижча оцінка, а 5 - найвища'
+                global_keyboard_message = keyboards.zero_to_five(viber_user, message)
+            elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::assessment::\d::\d$', message):
                 message_split = message.split('::')
                 service_request = ServiceRequest.objects.get(number=message_split[1])
 
-                handling = my_request_assessment(viber_user, service_request, message_split[3])
+                handling = my_request_assessment(viber_user, service_request, message_split[3], message_split[4])
                 global_text_message = handling[0]
                 global_keyboard_message = handling[1]
             elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::reject$', message):
@@ -483,7 +486,7 @@ def my_request_problem(viber_user, service_request):
     return text, keyboard
 
 
-def my_request_assessment(viber_user, service_request, response):
+def my_request_assessment(viber_user, service_request, assessment1, assessment2):
     with transaction.atomic():
         # Переводимо заявку у статус "Завершено"
         service_request.status_code = 9
@@ -493,7 +496,8 @@ def my_request_assessment(viber_user, service_request, response):
     body = {
         'viber_id': executor.viber_id,
         'type_assessment': "executor",
-        'assessment': response,
+        'assessment1': assessment1,
+        'assessment2': assessment2,
     }
     new_package = CustomCreate.create_package("INSERT", 'application/json', 'kvb::assessment', json.dumps(body),
                                               service_request.id)
