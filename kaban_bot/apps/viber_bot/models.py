@@ -6,41 +6,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from rabbitmq.management.commands.package_creator import CustomCreate
 
 
-
 # Create your models here.
-
-class Position(MPTTModel):
-    # Стандартні поля
-    createdon = models.DateTimeField("Дата створення", auto_now_add=True, blank=True)
-    status_code_set = (('0', 'Активований'), ('1', 'Деактивований'))
-    status_code = models.CharField(verbose_name="Стан", choices=status_code_set, max_length=1, default=0)
-
-    # Кастомні поля
-    name = models.CharField(verbose_name="Назва", max_length=128, blank=True)
-    codifier = models.CharField(verbose_name="Кодифікатор", max_length=100, blank=True, null=True, unique=True)
-    parent = TreeForeignKey('self', verbose_name="Батьківське розташування", on_delete=models.CASCADE, null=True, blank=True, related_name='children')
-
-    type_code_set = (('O', 'Область або АРК'),
-                     ('K', 'Місто, що має спеціальний статус'),
-                     ('P', 'Район в області або в АРК'),
-                     ('H', 'Територіальна громада'),
-                     ('M', 'Місто'),
-                     ('T', 'Селище міського типу'),
-                     ('C', 'Село'),
-                     ('X', 'Селище'),
-                     ('B', 'Район в місті'))
-    type_code = models.CharField(verbose_name="Тип", choices=type_code_set, max_length=1, null=True, blank=True)
-
-    class Meta:
-        app_label = 'viber_bot'
-        verbose_name = 'Розташування'
-        verbose_name_plural = 'Розташування'
-
-    class MPTTMeta:
-        order_insertion_by = ['name']
-
-    def __str__(self):
-        return self.name
 
 
 class Service(MPTTModel):
@@ -88,6 +54,79 @@ class Service(MPTTModel):
         return ', '.join(child.name for child in self.get_children())
 
 
+class PriceList(models.Model):
+    # Стандартні поля
+    createdon = models.DateTimeField("Дата створення", auto_now_add=True, blank=True)
+    status_code_set = (('0', 'Активований'), ('1', 'Деактивований'))
+    status_code = models.CharField(verbose_name="Стан", choices=status_code_set, max_length=1, default=0)
+
+    # Кастомні поля
+    name = models.CharField(verbose_name="Назва", max_length=100, blank=True)
+
+    class Meta:
+        app_label = 'viber_bot'
+        verbose_name = 'Прайс-лист'
+        verbose_name_plural = 'Прайс-листи'
+
+    def __str__(self):
+        return self.name
+
+
+class Price(models.Model):
+    # Стандартні поля
+    createdon = models.DateTimeField("Дата створення", auto_now_add=True, blank=True)
+    status_code_set = (('0', 'Активований'), ('1', 'Деактивований'))
+    status_code = models.CharField(verbose_name="Стан", choices=status_code_set, max_length=1, default=0)
+
+    # Кастомні поля
+    service = models.ForeignKey(Service, verbose_name="Послуга", on_delete=models.CASCADE, related_name='price_service')
+    price_list = models.ForeignKey(PriceList, verbose_name="Прайс-лист", on_delete=models.CASCADE,
+                                   related_name='price_price_list')
+    price = models.DecimalField(verbose_name="Ціна", max_digits=10, decimal_places=2)
+
+    class Meta:
+        app_label = 'viber_bot'
+        verbose_name = 'Прайс'
+        verbose_name_plural = 'Прайси'
+
+
+class Position(MPTTModel):
+    # Стандартні поля
+    createdon = models.DateTimeField("Дата створення", auto_now_add=True, blank=True)
+    status_code_set = (('0', 'Активований'), ('1', 'Деактивований'))
+    status_code = models.CharField(verbose_name="Стан", choices=status_code_set, max_length=1, default=0)
+
+    # Кастомні поля
+    name = models.CharField(verbose_name="Назва", max_length=128, blank=True)
+    codifier = models.CharField(verbose_name="Кодифікатор", max_length=100, blank=True, null=True, unique=True)
+    parent = TreeForeignKey('self', verbose_name="Батьківське розташування", on_delete=models.CASCADE, null=True,
+                            blank=True, related_name='children')
+    price_list = models.ForeignKey(PriceList, verbose_name="Прайс-лист", on_delete=models.CASCADE, blank=True,
+                                   null=True, related_name='position_price_list')
+
+    type_code_set = (('O', 'Область або АРК'),
+                     ('K', 'Місто, що має спеціальний статус'),
+                     ('P', 'Район в області або в АРК'),
+                     ('H', 'Територіальна громада'),
+                     ('M', 'Місто'),
+                     ('T', 'Селище міського типу'),
+                     ('C', 'Село'),
+                     ('X', 'Селище'),
+                     ('B', 'Район в місті'))
+    type_code = models.CharField(verbose_name="Тип", choices=type_code_set, max_length=1, null=True, blank=True)
+
+    class Meta:
+        app_label = 'viber_bot'
+        verbose_name = 'Розташування'
+        verbose_name_plural = 'Розташування'
+
+    class MPTTMeta:
+        order_insertion_by = ['name']
+
+    def __str__(self):
+        return self.name
+
+
 class ViberUser(models.Model):
     # Стандартні поля
     createdon = models.DateTimeField("Дата створення", auto_now_add=True, blank=False)
@@ -116,7 +155,6 @@ class ViberUser(models.Model):
         default=0, blank=True, null=True
     )
 
-
     class Meta:
         app_label = 'viber_bot'
         verbose_name = 'Користувач Viber'
@@ -144,16 +182,19 @@ class ServiceRequest(models.Model):
 
     # Кастомні поля
     number = models.CharField(verbose_name="Номер", max_length=19, blank=True)
-    customer = models.ForeignKey(ViberUser, verbose_name="Замовник", on_delete=models.CASCADE, related_name='service_requests_customer')
+    customer = models.ForeignKey(ViberUser, verbose_name="Замовник", on_delete=models.CASCADE,
+                                 related_name='service_requests_customer')
     executors = models.ManyToManyField(ViberUser, verbose_name="Виконавці", related_name='service_requests_executors')
-    rejected_executors = models.ManyToManyField(ViberUser, verbose_name="Відхилені Виконавці", related_name='service_requests_rejected_executors', blank=True)
+    rejected_executors = models.ManyToManyField(ViberUser, verbose_name="Відхилені Виконавці",
+                                                related_name='service_requests_rejected_executors', blank=True)
     address = models.CharField(verbose_name="Адреса", max_length=400, blank=True, null=True)
-    position = models.ForeignKey(Position, verbose_name="Населений пункт", on_delete=models.CASCADE, related_name='service_requests_position')
-    service = models.ForeignKey(Service, verbose_name="Послуга", on_delete=models.CASCADE, related_name='service_requests_service')
+    position = models.ForeignKey(Position, verbose_name="Населений пункт", on_delete=models.CASCADE,
+                                 related_name='service_requests_position')
+    service = models.ForeignKey(Service, verbose_name="Послуга", on_delete=models.CASCADE,
+                                related_name='service_requests_service')
     confirmed = models.BooleanField(verbose_name="Підтверджена", default=False)
 
     def save(self, *args, **kwargs):
-
         # Вызов оригинального метода save() для выполнения сохранения записи
         super().save(*args, **kwargs)
 
@@ -171,11 +212,8 @@ class ServiceRequest(models.Model):
             body['executor'] = executor.viber_id
         json_data = json.dumps(body, ensure_ascii=False).encode('utf-8')
         decoded_json_data = json_data.decode('utf-8')
-        new_package = CustomCreate.create_package('INSERT', 'application/json', 'kvb::service_request', decoded_json_data, self.id)
-
-
-
-
+        new_package = CustomCreate.create_package('INSERT', 'application/json', 'kvb::service_request',
+                                                  decoded_json_data, self.id)
 
     class Meta:
         app_label = 'viber_bot'
@@ -192,4 +230,3 @@ class UploadedFile(models.Model):
     file = models.FileField(verbose_name="Файл", upload_to='uploads_viber_bot/')
     file_name = models.CharField(verbose_name="Назва файлу", max_length=100, blank=False)
     user_viber_id = models.CharField(verbose_name="Вайбер ідентифікатор", max_length=100, blank=False)
-

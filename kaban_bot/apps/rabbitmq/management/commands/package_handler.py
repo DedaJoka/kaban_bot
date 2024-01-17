@@ -19,15 +19,8 @@ class Command(BaseCommand):
         for package in packages:
             if packages_handled < 5000:
                 handler(package)
-
-                # if package.status_code == 2:
-                #     # self.stdout.write(self.style.SUCCESS(f'{package.type} - Оброблено'))
-                # else:
-                #     # self.stdout.write(self.style.ERROR(f'{package.type} - Помилка'))
-
                 packages_handled += 1
             else:
-                # self.stdout.write(self.style.SUCCESS(f'Handled {packages_handled}. Exiting...'))
                 break
 
         end_time = time.time()

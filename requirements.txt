@@ -13,3 +13,4 @@ pytz==2023.3
 django-crontab==0.7.1
 pyuca==1.2
 PySnooper==1.2.0
+django-modeladmin-reorder==0.3.1

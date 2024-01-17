@@ -13,7 +13,7 @@ from rest_framework import serializers
 from viberbot.api.messages import TextMessage, PictureMessage
 from datetime import date, datetime, timedelta
 from . import config, keyboards
-from .models import ViberUser, Service, Position, ServiceRequest, UploadedFile
+from .models import ViberUser, Service, Position, ServiceRequest, PriceList, Price
 from rabbitmq.models import RabbitPackage
 from rabbitmq.management.commands.package_creator import CustomCreate
 from viberbot import BotConfiguration, Api
@@ -623,14 +623,20 @@ def location_handler(viber_user, message, lat, lon, address):
     elif town:
         position = Position.objects.filter(name=city, codifier__startswith=code_ua)
 
-    # print(position)
+    service = Service.objects.get(id=message.split('::')[1])
+
+    price_list = get_price_list(position[0])
+    try:
+        price = Price.objects.get(price_list=price_list.id, service=service.id)
+    except Price.DoesNotExist:
+        # Запись Price не найдена
+        print("Цена не найдена.")
 
     if position:
         viber_user.address = display_address
         viber_user.save()
-        service = Service.objects.get(id=message.split('::')[1])
         keyboard = keyboards.yes_no(viber_user, message + '::' + str(position[0].id))
-        text = f'Ви підтверджуєте заявку?\nПослуга: {service.name}\nМісце проведення: {display_address}'
+        text = f'Ви підтверджуєте заявку?\nПослуга: {service.name}\nЦіна: {price.price} грн.\n\nМісце проведення: {display_address}'
     else:
         key_def = keyboards.service_1(viber_user, message.split('::')[1])
         text = 'Розташування не було знайдене, вкажіть його вручну.'
@@ -642,6 +648,15 @@ def location_handler(viber_user, message, lat, lon, address):
 def location_manual_handler(viber_user, message, skip=False):
     message_split = message.split("::")
     position = Position.objects.get(id=message_split[7])
+    service = Service.objects.get(id=message.split('::')[1])
+
+    price_list = get_price_list(position)
+    try:
+        price = Price.objects.get(price_list=price_list.id, service=service.id)
+    except Price.DoesNotExist:
+        # Запись Price не найдена
+        print("Цена не найдена.")
+
     if skip:
         address = viber_user.address
     else:
@@ -653,14 +668,10 @@ def location_manual_handler(viber_user, message, skip=False):
 
     display_address = full_path + ', ' + viber_user.address
 
-    print(full_path)
-    print(display_address)
-
     viber_user.address = display_address
     viber_user.menu = f'{viber_user.menu}::home'
     viber_user.save()
-    service = Service.objects.get(id=message.split('::')[1])
-    text = f'Ви підтверджуєте заявку?\nПослуга: {service.name}\n\nМісце проведення: {display_address}'
+    text = f'Ви підтверджуєте заявку?\nПослуга: {service.name}\nЦіна: {price.price} грн.\n\nМісце проведення: {display_address}'
     keyboard = keyboards.yes_no(viber_user, 'service::' + str(service.id) + '::location::' + str(position.id))
 
     body = {
@@ -981,3 +992,15 @@ def test(viber_user):
         print(f'{i.id} - {i.name}')
 
     return text, keyboard
+
+
+def get_price_list(position):
+    # Проверяем текущую запись Position
+    if position.price_list:
+        return position.price_list
+    # Если у текущей записи нет price_list, проверяем наличие родителя и вызываем эту же функцию для родителя
+    elif position.parent:
+        return get_price_list(position.parent)
+    # Если у текущей записи нет прайс-листа и нет родителя, возвращаем None
+    else:
+        return None

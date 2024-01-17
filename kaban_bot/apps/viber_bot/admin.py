@@ -1,29 +1,13 @@
 from django.contrib import admin
 from django.db import models
 from mptt.admin import MPTTModelAdmin, DraggableMPTTAdmin
-from .models import ViberUser, Service, Position, ServiceRequest, UploadedFile
+from .models import ViberUser, Service, Position, ServiceRequest, UploadedFile, PriceList, Price
 from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from mptt.forms import TreeNodeChoiceField
 
 
-
 # Register your models here.
-
-class ServiceChildrenInline(admin.TabularInline):
-    model = Service
-    fk_name = 'parent'
-    extra = 0
-    fields = ['name', 'priority']
-    ordering = ['priority']
-
-
-class PositionChildrenInline(admin.TabularInline):
-    model = Position
-    fk_name = 'parent'
-    extra = 0
-    fields = ['name', 'codifier']
-    ordering = ['name']
 
 
 class ViberUserForm(forms.ModelForm):
@@ -44,8 +28,9 @@ class ViberUserForm(forms.ModelForm):
         model = ViberUser
         fields = '__all__'
 
+@admin.register(ViberUser)
 class ViberUserAdmin(admin.ModelAdmin):
-    list_display = ['viber_id', 'full_name', 'executor', 'createdon', 'status_code']
+    list_display = ['viber_id', 'phone_number', 'full_name', 'executor', 'createdon', 'status_code']
     form = ViberUserForm
     fieldsets = (
         (None, {
@@ -64,7 +49,7 @@ class ViberUserAdmin(admin.ModelAdmin):
             'fields': ('once', 'menu', 'address'),
         }),
     )
-admin.site.register(ViberUser, ViberUserAdmin)
+
 
 
 
@@ -86,6 +71,7 @@ class ServiceRequestForm(forms.ModelForm):
         model = ServiceRequest
         fields = '__all__'
 
+@admin.register(ServiceRequest)
 class ServiceRequestAdmin(admin.ModelAdmin):
     list_display = ['number', 'customer', 'createdon', 'status_code']
     form = ServiceRequestForm
@@ -103,16 +89,34 @@ class ServiceRequestAdmin(admin.ModelAdmin):
         }),
     )
     readonly_fields = ('modifiedon',)
-admin.site.register(ServiceRequest, ServiceRequestAdmin)
 
 
+
+
+class PositionChildrenInline(admin.TabularInline):
+    model = Position
+    fk_name = 'parent'
+    extra = 0
+    fields = ['name', 'codifier']
+    ordering = ['name']
+
+@admin.register(Position)
 class PositionAdmin(DraggableMPTTAdmin):
     list_filter = ('type_code',)
     search_fields = ['name', 'codifier']
     inlines = [PositionChildrenInline]
-admin.site.register(Position, PositionAdmin)
 
 
+
+
+class ServiceChildrenInline(admin.TabularInline):
+    model = Service
+    fk_name = 'parent'
+    extra = 0
+    fields = ['name', 'priority']
+    ordering = ['priority']
+
+@admin.register(Service)
 class ServiceAdmin(DraggableMPTTAdmin):
     list_display = ('tree_actions', 'indented_title', 'productnumber', 'priority')
     list_display_links = ('indented_title',)
@@ -126,9 +130,36 @@ class ServiceAdmin(DraggableMPTTAdmin):
     )
     inlines = [ServiceChildrenInline]
     # ordering = ['tree_id', 'level', 'priority']
-admin.site.register(Service, ServiceAdmin)
 
 
+
+
+@admin.register(UploadedFile)
 class UploadedFileAdmin(admin.ModelAdmin):
     list_display = ['createdon']
-admin.site.register(UploadedFile, UploadedFileAdmin)
+
+
+
+
+class PriceListInline(admin.TabularInline):
+    model = Price
+    fk_name = 'price_list'
+    extra = 0
+    fields = ['service', 'price']
+    ordering = ['service']
+
+@admin.register(PriceList)
+class PriceListAdmin(admin.ModelAdmin):
+    list_display = ['name', 'createdon', 'status_code']
+    inlines = [PriceListInline]
+    list_filter = ('status_code',)
+    readonly_fields = ('createdon',)
+
+
+
+
+@admin.register(Price)
+class PriceAdmin(admin.ModelAdmin):
+    list_display = ['createdon', 'status_code', 'price_list', 'service', 'price']
+    list_filter = ('status_code',)
+    readonly_fields = ('createdon',)
