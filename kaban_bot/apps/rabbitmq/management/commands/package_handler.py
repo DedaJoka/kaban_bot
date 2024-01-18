@@ -1,5 +1,5 @@
 from ...models import RabbitPackage
-from viber_bot.models import Position, Service
+from viber_bot.models import Position, Service, PriceList, Price
 from django.core.management.base import BaseCommand, CommandError
 import json
 import time
@@ -43,10 +43,11 @@ def crm_position(package):
     has_name = 'name' in data and data['name']
     has_category_code = 'category_code' in data and data['category_code']
     has_parent_codifier = 'parent_codifier' in data and data['parent_codifier']
+    has_pricelevel = 'pricelevel' in data and data['pricelevel']
 
     if has_codifier and has_name and has_category_code:
+        # Оновлення існуючого
         try:
-            # Оновлення існуючого
             position = Position.objects.get(codifier=data['codifier'])
             if position.name != data['name']:
                 position.name = data['name']
@@ -89,8 +90,8 @@ def crm_position(package):
                 package.last_error = None
                 package.status_code = 2
                 package.save()
+        # Створення нового запису
         except:
-            # Створення нового запису
             if has_parent_codifier and data['parent_codifier'] != 'UA':
                 # parent_codifier є і він має дані
                 try:
@@ -136,6 +137,36 @@ def crm_position(package):
                 package.last_error = None
                 package.status_code = 2
                 package.save()
+        # Прайс-лист
+        if has_pricelevel:
+            position = Position.objects.get(codifier=data['codifier'])
+            for pricelevel in data['pricelevel']:
+                # Оновлення існуючого
+                try:
+                    pricelist = PriceList.objects.get(name=pricelevel['name'])
+                # Створення нового
+                except:
+                    pricelist = PriceList(
+                        name=pricelevel['name']
+                    ).save()
+                for productpricelevel in pricelevel['productpricelevel']:
+                    service = Service.objects.get(productnumber=productpricelevel['productnumber'])
+                    # Оновлення існуючого
+                    try:
+                        price = Price.objects.get(price_list=pricelist, service=service)
+                        if price.price != productpricelevel['amount']:
+                            price.price = productpricelevel['amount']
+                            price.save()
+                    # Створення нового
+                    except:
+                        price = Price(
+                            service=service,
+                            price_list=pricelist,
+                            price=productpricelevel['amount']
+                        ).save()
+                position.price_list = pricelist
+                position.save()
+
     else:
         package.last_error = 'Відсутні обовязкові аргументи!'
         package.status_code = 5
@@ -163,7 +194,7 @@ def crm_product(package):
 
                 result_successful(package)
             except:
-                result_fail(package, 'Не знайдень батьківської послуги!')
+                result_fail(package, 'Не знайдено батьківської послуги!')
         else:
             try:
                 service = Service(

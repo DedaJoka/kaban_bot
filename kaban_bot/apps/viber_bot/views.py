@@ -626,17 +626,21 @@ def location_handler(viber_user, message, lat, lon, address):
     service = Service.objects.get(id=message.split('::')[1])
 
     price_list = get_price_list(position[0])
-    try:
-        price = Price.objects.get(price_list=price_list.id, service=service.id)
-    except Price.DoesNotExist:
-        # Запись Price не найдена
-        print("Цена не найдена.")
+    if price_list == None:
+        price_text = 'договірна'
+    else:
+        try:
+            price = Price.objects.get(price_list=price_list.id, service=service.id)
+            price_text = f'{price.price} грн.'
+        except Price.DoesNotExist:
+            # Запись Price не найдена
+            price_text = 'договірна'
 
     if position:
         viber_user.address = display_address
         viber_user.save()
         keyboard = keyboards.yes_no(viber_user, message + '::' + str(position[0].id))
-        text = f'Ви підтверджуєте заявку?\nПослуга: {service.name}\nЦіна: {price.price} грн.\n\nМісце проведення: {display_address}'
+        text = f'Ви підтверджуєте заявку?\nПослуга: {service.name}\nЦіна: {price_text}\n\nМісце проведення: {display_address}'
     else:
         key_def = keyboards.service_1(viber_user, message.split('::')[1])
         text = 'Розташування не було знайдене, вкажіть його вручну.'
@@ -651,11 +655,16 @@ def location_manual_handler(viber_user, message, skip=False):
     service = Service.objects.get(id=message.split('::')[1])
 
     price_list = get_price_list(position)
-    try:
-        price = Price.objects.get(price_list=price_list.id, service=service.id)
-    except Price.DoesNotExist:
-        # Запись Price не найдена
-        print("Цена не найдена.")
+
+    if price_list == None:
+        price_text = 'договірна'
+    else:
+        try:
+            price = Price.objects.get(price_list=price_list.id, service=service.id)
+            price_text = f'{price.price} грн.'
+        except Price.DoesNotExist:
+            # Запись Price не найдена
+            price_text = 'договірна'
 
     if skip:
         address = viber_user.address
@@ -671,7 +680,7 @@ def location_manual_handler(viber_user, message, skip=False):
     viber_user.address = display_address
     viber_user.menu = f'{viber_user.menu}::home'
     viber_user.save()
-    text = f'Ви підтверджуєте заявку?\nПослуга: {service.name}\nЦіна: {price.price} грн.\n\nМісце проведення: {display_address}'
+    text = f'Ви підтверджуєте заявку?\nПослуга: {service.name}\nЦіна: {price_text}\n\nМісце проведення: {display_address}'
     keyboard = keyboards.yes_no(viber_user, 'service::' + str(service.id) + '::location::' + str(position.id))
 
     body = {
@@ -709,7 +718,7 @@ def location_manual_number_handler(viber_user, message):
     viber_user.menu = menu + '::number'
     viber_user.save()
 
-    text = f'Введіть номер Вшої квартири\nНаприклад: 108\n\nЯкщо квартира відсутня, натисніть кнопку "Пропустити"'
+    text = f'Введіть номер Вашої квартири\nНаприклад: 108\n\nЯкщо квартира відсутня, натисніть кнопку "Пропустити"'
     keyboard = keyboards.skip(viber_user, viber_user.menu)
     return text, keyboard
 
