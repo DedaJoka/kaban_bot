@@ -607,7 +607,7 @@ def my_request_done(viber_user, service_request):
 
 def location_region_startswith(viber_user, message):
     buttons = []
-    unique_initials = Position.objects.filter(type_code='O').annotate(initial=Left('name', 1)).order_by(
+    unique_initials = Position.objects.filter(type_code='O', status_code='0').annotate(initial=Left('name', 1)).order_by(
         'initial').values_list('initial', flat=True).distinct()
     unique_initials_count = unique_initials.count()
     sorted_unique_initials = sorted(unique_initials, key=collator.sort_key)
@@ -650,7 +650,7 @@ def location_region_startswith(viber_user, message):
 
 def location_region_picker(viber_user, message):
     buttons = []
-    positions = Position.objects.filter(name__startswith=f'{message.split("::")[3]}', type_code='O')
+    positions = Position.objects.filter(name__startswith=f'{message.split("::")[3]}', type_code='O', status_code='0')
     positions_count = positions.count()
     sorted_tree_queryset = sorted(positions, key=lambda x: collator.sort_key(x.name))
 
@@ -686,7 +686,7 @@ def location_region_picker(viber_user, message):
 def location_populated_centre_startswith(viber_user, message):
     buttons = []
     region = Position.objects.get(id=message.split('::')[4])
-    positions_filter = Q(type_code='M') | Q(type_code='T') | Q(type_code='C') | Q(type_code='X')
+    positions_filter = (Q(type_code='M') | Q(type_code='T') | Q(type_code='C') | Q(type_code='X')) & Q(status_code='0')
     unique_initials = region.get_descendants().filter(positions_filter).annotate(
         initial=Left('name', 1)).order_by('initial').values_list('initial', flat=True).distinct()
     unique_initials_count = unique_initials.count()
@@ -733,7 +733,7 @@ def location_populated_centre_picker(viber_user, message):
     message_split = message.split("::")
     region = Position.objects.get(id=message_split[4])
     positions_filter = (Q(type_code='M') | Q(type_code='T') | Q(type_code='C') | Q(type_code='X')) & Q(
-        name__startswith=message_split[5])
+        name__startswith=message_split[5]) & Q(status_code='0')
     positions = region.get_descendants().filter(positions_filter)
     sorted_tree_queryset = sorted(positions, key=lambda x: collator.sort_key(x.name))
 

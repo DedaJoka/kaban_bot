@@ -102,7 +102,7 @@ class PositionChildrenInline(admin.TabularInline):
 
 @admin.register(Position)
 class PositionAdmin(DraggableMPTTAdmin):
-    list_filter = ('type_code',)
+    list_filter = ('type_code', 'status_code')
     search_fields = ['name', 'codifier']
     inlines = [PositionChildrenInline]
 
