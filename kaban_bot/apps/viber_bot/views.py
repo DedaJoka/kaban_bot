@@ -76,10 +76,10 @@ def send(viber_user_id):
             text=global_text_message,
             keyboard=global_keyboard_message,
             min_api_version=6)
-        now = time.time()
-        print(now, 'before send')
+        # now = time.time()
+        # print(now, 'before send')
         viber.send_messages(viber_user_id, [response_message])
-        print(now, 'отправили сообщение')
+        # print(now, 'after send')
 
     else:
         print(
@@ -602,13 +602,10 @@ def change_phone_number(viber_user, message):
 def location_handler(viber_user, message, lat, lon, address):
     location = geocoder.osm([lat, lon], method='reverse')
 
-    # print(location.raw)
-    # print(address)
-    # print(location.raw['display_name'])
-
     city = location.city
     town = location.town
     code_ua = location.raw['address']['ISO3166-2-lvl4'].replace("-", "")
+
 
     split_address = address.split(", ")
     display_address = ''
@@ -616,6 +613,10 @@ def location_handler(viber_user, message, lat, lon, address):
         display_address = split_address[-4] + ', '
     display_address = display_address + location.raw['display_name']
 
+    # print(json.dumps(location.raw, ensure_ascii=False))
+    # print(code_ua)
+    # print(address)
+    # print(location.raw['display_name'])
     # print(display_address)
 
     if city:
@@ -636,11 +637,15 @@ def location_handler(viber_user, message, lat, lon, address):
             # Запись Price не найдена
             price_text = 'договірна'
 
-    if position:
+    if position and position[0].status_code == "0":
         viber_user.address = display_address
         viber_user.save()
         keyboard = keyboards.yes_no(viber_user, message + '::' + str(position[0].id))
         text = f'Ви підтверджуєте заявку?\nПослуга: {service.name}\nЦіна: {price_text}\n\nМісце проведення: {display_address}'
+    elif position and position[0].status_code == "1":
+        key_def = keyboards.service_1(viber_user, message.split('::')[1])
+        text = f'На даний момент населений пункт {city} - не обслуговується.'
+        keyboard = key_def[1]
     else:
         key_def = keyboards.service_1(viber_user, message.split('::')[1])
         text = 'Розташування не було знайдене, вкажіть його вручну.'
