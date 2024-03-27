@@ -81,7 +81,7 @@ class ServiceRequestAdmin(admin.ModelAdmin):
         }),
         ('Додаткові дані про заявку:', {
             'classes': ('wide',),
-            'fields': ('position', 'address', 'service'),
+            'fields': ('position', 'address', 'service', 'price'),
         }),
         ('Виконавці', {
             'classes': ('wide',),

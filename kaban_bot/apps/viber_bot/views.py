@@ -1,6 +1,11 @@
 import json
 import re
 import time
+import hashlib
+import hmac
+from urllib.parse import urlencode, quote_plus, urlparse
+
+import requests
 
 import geocoder
 import os
@@ -23,6 +28,8 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.db.models.functions import Left
 from pyuca import Collator
+import xml.etree.ElementTree as ET
+
 
 # Create your views here.
 bot_configuration = BotConfiguration(
@@ -59,7 +66,24 @@ def incoming(request):
         return HttpResponse(status=200)
     elif event == 'subscribed' or event == 'conversation_started':
         # начало общения с ботом
-        started(request_dict)
+        print(event)
+        try:
+            context = request_dict['context']
+            if re.match(r'^my_request::payment::good::', context):
+                service_number = context.split('::')[3]
+                service_request = ServiceRequest.objects.get(number=service_number)
+                viber_user = ViberUser.objects.get(viber_id=request_dict['user']['id'])
+                handling = my_request_payment_successfully(viber_user, service_request)
+                global_text_message = handling[0]
+                global_keyboard_message = handling[1]
+            elif re.match(r'^my_request::payment::bad::', context):
+                service_number = context.split('::')[3]
+                service_request = ServiceRequest.objects.get(number=service_number)
+                viber_user = ViberUser.objects.get(viber_id=request_dict['user']['id'])
+                global_text_message = 'Нажаль оплата не здійснена, повторіть спробу ще раз.'
+                global_keyboard_message = keyboards.my_request_confirmation(viber_user, service_request)
+        except:
+            started(request_dict)
         send(request_dict['user']['id'])
         return HttpResponse(status=200)
     elif event == 'message':
@@ -153,6 +177,7 @@ def message(request_dict):
         print(f'???? {once} = {viber_user.once} ????')
         global_viber_id = viber_user.viber_id
 
+        #Тут +1 к once (костылю)
         if int(once) == viber_user.once and global_viber_id:
             need_handled = True
             viber_user.once += 1
@@ -239,27 +264,20 @@ def message(request_dict):
                 save_menu(viber_user, message)
                 global_text_message = f'Введіть назву Вашої вулиці\nНаприклад:\n\tвул. Богдана Хмельницького\n\tпровулок Незалежності'
                 global_keyboard_message = keyboards.start_input(viber_user)
-            elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::.+$',
-                          message) and re.match(
-                    r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}$', viber_user.menu):
+            elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::.+$', message) and \
+                    re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}$', viber_user.menu):
                 handling = location_manual_street_handler(viber_user, message)
                 global_text_message = handling[0]
                 global_keyboard_message = handling[1]
-            elif re.match(
-                    r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street::[\w\\/а-яА-Яa-zA-Z]+$',
-                    message):
+            elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street::[\w\\/а-яА-Яa-zA-Z]+$', message):
                 handling = location_manual_number_handler(viber_user, message)
                 global_text_message = handling[0]
                 global_keyboard_message = handling[1]
-            elif re.match(
-                    r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street::number::\d+$',
-                    message):
+            elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street::number::\d+$', message):
                 handling = location_manual_handler(viber_user, message)
                 global_text_message = handling[0]
                 global_keyboard_message = handling[1]
-            elif re.match(
-                    r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street::number::skip$',
-                    message):
+            elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street::number::skip$', message):
                 handling = location_manual_handler(viber_user, message, True)
                 global_text_message = handling[0]
                 global_keyboard_message = handling[1]
@@ -273,11 +291,18 @@ def message(request_dict):
                 handling = my_request_handler(viber_user, service_request)
                 global_text_message = handling[0]
                 global_keyboard_message = handling[1]
-            elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::confirm$', message):
+            elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::confirm_and_payment$', message):
                 message_split = message.split('::')
                 service_request = ServiceRequest.objects.get(number=message_split[1])
 
-                handling = my_request_confirm(viber_user, service_request)
+                handling = my_request_confirm_and_payment(viber_user, service_request)
+                global_text_message = handling[0]
+                global_keyboard_message = handling[1]
+            elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::payment$', message):
+                message_split = message.split('::')
+                service_request = ServiceRequest.objects.get(number=message_split[1])
+
+                handling = my_request_payment(viber_user, service_request)
                 global_text_message = handling[0]
                 global_keyboard_message = handling[1]
             elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::problem$', message):
@@ -444,7 +469,16 @@ def my_request_handler(viber_user, service_request):
         keyboard = keyboards.my_request_cancel(viber_user, service_request)
     elif service_request.status_code == '5':
         executor = service_request.executors.first()
-        text = f'На Вашу заявку відгукнувся майстр {executor.full_name}\nРейтинг майстра: {executor.executor_rating}'
+        if service_request.price is None:
+            amount = '150.00 грн. за виклик майстра. \n' \
+                   'Зверніть увагу, що іншу частину оплати потрібно буде сплатити майстру за фактом виконаних робіт.'
+        else:
+            amount = f'{service_request.price} грн.'
+
+        text = f'На Вашу заявку відгукнувся майстр {executor.full_name}\n' \
+               f'Рейтинг майстра: {executor.executor_rating}\n' \
+               f'Для підтвердження заявки Вам необхідно її оплатити.\n' \
+               f'Сума до сплати: {amount}'
         keyboard = keyboards.my_request_confirmation(viber_user, service_request)
     elif service_request.status_code == '6':
         text = f'Ваша заявка в роботі. Очікуйте дзвінка від майстра.'
@@ -455,7 +489,66 @@ def my_request_handler(viber_user, service_request):
     return text, keyboard
 
 
-def my_request_confirm(viber_user, service_request):
+def my_request_confirm_and_payment(viber_user, service_request):
+    if service_request.price:
+        price = int(service_request.price * 100)
+    else:
+        price = int(15000)
+
+    unix_timestamp = datetime.timestamp(datetime.now()) * 1000
+    salt = hashlib.sha1(str(unix_timestamp).encode()).hexdigest()
+    sign = hmac.new(config.payment_sign_key.encode(), salt.encode(), hashlib.sha512).hexdigest()
+
+    xml_data = """<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<payment>
+    <auth>
+        <mch_id>{mch_id}</mch_id>
+        <salt>{salt}</salt>
+        <sign>{sign}</sign>
+    </auth>
+    <urls>
+        <good>{good}</good>
+        <bad>{bad}</bad>
+        <auto_redirect_good>1</auto_redirect_good>
+        <auto_redirect_bad>1</auto_redirect_bad>
+    </urls>
+    <transactions>
+        <transaction>
+            <amount>{amount}</amount>
+            <currency>{currency}</currency>
+            <desc>{desc}</desc>
+            <info>{info}</info>
+        </transaction>
+    </transactions>
+    <lifetime>{lifetime}</lifetime>
+    <lang>{lang}</lang>
+</payment>""".format(
+        mch_id=config.payment_mch_id,
+        salt=salt,
+        sign=sign,
+        good=f"viber://pa?chatURI={config.NAME}&context=my_request::payment::good::{service_request.number}",
+        bad=f"viber://pa?chatURI={config.NAME}&context=my_request::payment::bad::{service_request.number}",
+        amount=price,
+        currency="UAH",
+        desc=f'Оплата за послугу: "{service_request.service}"',
+        info="{\"ServiceRequest\":\"" + service_request.number + "\"}",
+        lifetime=24,
+        lang="ru"
+    )
+    parsed_url = urlparse(config.payment_url)
+    domain = parsed_url.netloc
+    response = requests.post(config.payment_url, data=urlencode({'data': xml_data}, quote_via=quote_plus),
+                             headers={'Content-Type': 'application/x-www-form-urlencoded',
+                                      'Host': domain})
+
+    response_from = ET.fromstring(response.text)
+    response_url = response_from.find('url').text
+    text = f'Натисніть "Перейти до оплати", Вас перенаправить на сайт платіжної системи IPay.'
+    keyboard = keyboards.my_request_confirmation_payment(viber_user, service_request, response_url)
+    return text, keyboard
+
+
+def my_request_payment_successfully(viber_user, service_request):
     with transaction.atomic():
         # Переводимо заявку у статус "В роботі (Підтверджений майстер)"
         service_request.status_code = 6
@@ -465,14 +558,14 @@ def my_request_confirm(viber_user, service_request):
     executor = service_request.executors.first()
     keyboard = keyboards.start_menu(executor)
     response_message = TextMessage(
-        text=f'Замовник підтвердив заявку, на яку Ви відгукнулись\nНомер заявки: {service_request.number}',
+        text=f'Замовник підтвердив та оплатив заявку, на яку Ви відгукнулись\nНомер заявки: {service_request.number}',
         keyboard=keyboard,
         min_api_version=6)
     viber.send_messages(executor.viber_id, [response_message])
 
     # Відправляємо повідомлення замовнику
-    text = f"Заявка успішно підтверджена. Майстер зв'яжеться з вами найближчим часом"
-    keyboard = keyboards.service_0(viber_user)
+    text = f"Заявка успішно оплачена. Майстер зв'яжеться з вами найближчим часом"
+    keyboard = keyboards.start_menu(viber_user)
     return text, keyboard
 
 
@@ -561,11 +654,6 @@ def my_request_cancel(viber_user, service_request, response):
     executors_count = service_request.executors.count()
 
     if response == "yes":
-        with transaction.atomic():
-            # Переводимо заявку у статус "Скасованої"
-            service_request.status_code = 3
-            service_request.save()
-
         if service_request.status_code in ("5", "6"):
             # Відправляемо повідомлення Виконавцю
             executor = service_request.executors.first()
@@ -577,8 +665,16 @@ def my_request_cancel(viber_user, service_request, response):
             viber.send_messages(executor.viber_id, [response_message])
 
         # Відправляемо повідомлення Замовнику
-        text = f'Ваша заявка {service_request.number} - скасована'
+        if service_request.status_code == '6':
+            text = f'Ваша заявка {service_request.number} - скасована.\nЩодо умов повернення коштів, з Вами свяжется менеджер для уточнення'
+        else:
+            text = f'Ваша заявка {service_request.number} - скасована'
         keyboard = keyboards.service_0(viber_user)
+
+        with transaction.atomic():
+            # Переводимо заявку у статус "Скасованої"
+            service_request.status_code = 3
+            service_request.save()
 
         return text, keyboard
 
@@ -728,7 +824,7 @@ def location_manual_number_handler(viber_user, message):
     return text, keyboard
 
 
-# "Підтвердження" на створення заявку
+# СТВОРЕННЯ ЗАЯВКИ
 def verification_service_request(viber_user, message):
     message_split = message.split("::")
     service_id = message_split[1]
@@ -754,6 +850,20 @@ def verification_service_request(viber_user, message):
         service_request = ServiceRequest(number=number, customer=viber_user, address=viber_user.address,
                                          position=position, service=service, status_code=4)
         service_request.save()
+
+        price_list = get_price_list(position)
+        if price_list == None:
+            # Price list не найден
+            pass
+        else:
+            try:
+                price = Price.objects.get(price_list=price_list.id, service=service.id)
+                service_request.price = price.price
+                service_request.save()
+            except Price.DoesNotExist:
+                # Запись Price не найдена
+                pass
+
         # ServiceRequestToRabbitMQ(service_request, 'INSERT')
 
         text = f'Ваша заявка створена!\nНомер заявки: {number}'

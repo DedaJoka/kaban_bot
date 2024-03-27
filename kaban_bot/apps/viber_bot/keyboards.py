@@ -523,7 +523,7 @@ def my_request_cancel(viber_user, service_request):
 def my_request_confirmation(viber_user, service_request):
     buttons = []
     buttons.append(button(6, 1,  # Columns & Rows
-                          f'<font size=22 color="#FFFFFF"><b>Підтвердити майстра</b></font>',
+                          f'<font size=22 color="#FFFFFF"><b>Підтвердити та оплатити</b></font>',
                           # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
                           f'',
                           # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
@@ -531,7 +531,7 @@ def my_request_confirmation(viber_user, service_request):
                           # actiontype - ТИП ОТВЕТА
                           'reply',
                           # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
-                          f'{viber_user.once}&&my_request::{service_request.number}::confirm',
+                          f'{viber_user.once}&&my_request::{service_request.number}::confirm_and_payment',
                           ))
     buttons.append(button(6, 1,  # Columns & Rows
                           f'<font size=22 color="#FFFFFF"><b>Відхилити майстра</b></font>',
@@ -562,6 +562,31 @@ def my_request_confirmation(viber_user, service_request):
                                f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/5x1/gray_light.png',
                                # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
                                f'{viber_user.once}&&my_requests',
+                               ))
+    buttons.append(button_home(viber_user))
+    keyboard = keyboard_def(buttons, "hidden")
+    return keyboard
+
+def my_request_confirmation_payment(viber_user, service_request, response_url):
+    buttons = []
+    buttons.append(button(6, 1,  # Columns & Rows
+                          f'<font size=22 color="#FFFFFF"><b>Перейти до оплати</b></font>',
+                          # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
+                          f'',
+                          # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
+                          f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/6x1/green.png',
+                          # actiontype - ТИП ОТВЕТА
+                          'open-url',
+                          # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
+                          f'{response_url}',
+                          ))
+    buttons.append(button_back(f'<font size=22 color="#404040"><b>Назад</b></font>',
+                               # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
+                               f'',
+                               # bgimg - картинка фона (НЕ ОБЯЗАТЕЛЬНО)
+                               f'{config.domain}{settings.STATIC_URL}viber_bot_buttons/5x1/gray_light.png',
+                               # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
+                               f'{viber_user.once}&&my_request::{service_request.number}',
                                ))
     buttons.append(button_home(viber_user))
     keyboard = keyboard_def(buttons, "hidden")

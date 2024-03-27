@@ -174,7 +174,7 @@ class ServiceRequest(models.Model):
                        ('3', 'Скасована'),
                        ('4', 'Очікування майстра'),
                        ('5', 'Очікування підтвердження'),
-                       ('6', 'В роботі (Підтверджений майстер)'),
+                       ('6', 'В роботі (Підтверджена та оплачена)'),
                        ('7', 'Уточнення (від майстра)'),
                        ('8', 'Уточнення (від клієнта)'),
                        ('9', 'Завершено'),)
@@ -192,6 +192,7 @@ class ServiceRequest(models.Model):
                                  related_name='service_requests_position')
     service = models.ForeignKey(Service, verbose_name="Послуга", on_delete=models.CASCADE,
                                 related_name='service_requests_service')
+    price = models.DecimalField(verbose_name="Вартість", max_digits=10, decimal_places=2, null=True, blank=True)
     confirmed = models.BooleanField(verbose_name="Підтверджена", default=False)
 
     def save(self, *args, **kwargs):
