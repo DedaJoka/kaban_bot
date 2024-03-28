@@ -1,3 +1,5 @@
+from django.db import transaction
+
 from ...models import RabbitPackage
 from viber_bot.models import Position, Service, PriceList, Price
 from django.core.management.base import BaseCommand, CommandError
@@ -128,26 +130,41 @@ def crm_position(package):
                     pricelist = PriceList.objects.get(name=pricelevel['name'])
                 # Створення нового
                 except:
-                    pricelist = PriceList(
-                        name=pricelevel['name']
-                    ).save()
+                    try:
+                        with transaction.atomic():
+                            pricelist = PriceList(
+                                name=pricelevel['name']
+                            )
+                            pricelist.save()
+                            # Ваш остальной код после сохранения pricelist
+                    except Exception as e:
+                        result_fail(package, f'Произошла ошибка при сохранении нового прайс-листа: {e}')
+                        return
                 for productpricelevel in pricelevel['productpricelevel']:
-                    service = Service.objects.get(productnumber=productpricelevel['productnumber'])
+                    try:
+                        service = Service.objects.get(productnumber=productpricelevel['productnumber'])
+                    except Exception as e:
+                        result_fail(package, f'Не найдена услуга из прайса: {productpricelevel["productnumber"]}\n'
+                                             f'Ошибка: {e}')
+                        return
                     # Оновлення існуючого
                     try:
                         price = Price.objects.get(price_list=pricelist, service=service)
                         if price.price != productpricelevel['amount']:
-                            price.price = productpricelevel['amount']
-                            price.save()
+                            with transaction.atomic():
+                                price.price = productpricelevel['amount']
+                                price.save()
                     # Створення нового
                     except:
-                        price = Price(
-                            service=service,
-                            price_list=pricelist,
-                            price=productpricelevel['amount']
-                        ).save()
-                position.price_list = pricelist
-                position.save()
+                        with transaction.atomic():
+                            price = Price(
+                                service=service,
+                                price_list=pricelist,
+                                price=productpricelevel['amount']
+                            ).save()
+                with transaction.atomic():
+                    position.price_list = pricelist
+                    position.save()
     else:
         result_fail(package, 'Відсутні обовязкові аргументи!')
         return

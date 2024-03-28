@@ -101,7 +101,7 @@ class Position(MPTTModel):
     codifier = models.CharField(verbose_name="Кодифікатор", max_length=100, blank=True, null=True, unique=True)
     parent = TreeForeignKey('self', verbose_name="Батьківське розташування", on_delete=models.CASCADE, null=True,
                             blank=True, related_name='children')
-    price_list = models.ForeignKey(PriceList, verbose_name="Прайс-лист", on_delete=models.CASCADE, blank=True,
+    price_list = models.ForeignKey(PriceList, verbose_name="Прайс-лист", on_delete=models.SET_NULL, blank=True,
                                    null=True, related_name='position_price_list')
 
     type_code_set = (('O', 'Область або АРК'),
