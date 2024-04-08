@@ -23,7 +23,6 @@ class CustomApiRequestSender(ApiRequestSender):
     def __init__(self, logger, viber_bot_api_url, bot_configuration, viber_bot_user_agent):
         super().__init__(logger, viber_bot_api_url, bot_configuration, viber_bot_user_agent)
         self.session = requests.Session()
-        self.session.verify = False
 
     def post_request(self, endpoint, payload):
         try:
