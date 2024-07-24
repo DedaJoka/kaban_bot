@@ -130,8 +130,8 @@ def started(request_dict):
         global_text_message = f'З поверненням {viber_user.full_name}!\nДаний бот допоможе принести у Вашу оселю ще більше тепла та затишку. Всі майстри кваліфіковані, мають необхідні сертифікації та індивідуальний підхід до кожного клієнта. Ви зможете замовити будь-яку існуючу послугу без зайвих турбот та всього у пару кліків. Вперед до змін!'
         global_keyboard_message = keyboards.start_menu(viber_user)
 
-        # Відправляємо користувача до ЦРМ
-        ViberUserToRabbitMQ(viber_user, 'UPDATE')
+        # # Відправляємо користувача до ЦРМ
+        # ViberUserToRabbitMQ(viber_user, 'UPDATE')
 
 
 # Функція обробки event == 'message'
@@ -227,8 +227,8 @@ def message(request_dict):
                     global_text_message = f'Дякуємо, Ваш номер збережено. Ви можете його змінити в будь-який момент в налаштуваннях.\nДля продовження скористайтесь контекстним меню.'
                     global_keyboard_message = keyboards.start_menu(viber_user)
 
-                    # Відправляємо користувача до ЦРМ
-                    ViberUserToRabbitMQ(viber_user, 'INSERT')
+                    # # Відправляємо користувача до ЦРМ
+                    # ViberUserToRabbitMQ(viber_user, 'INSERT')
 
                 elif message_split[2] == 'no':
                     global_text_message = "Для продовження необхідно пройти авторизацію. Для цього поділіться номером телефону, котрий прив'язаний до вайберу, або введіть Ваш контактний номер телефону\nФормат: +380ХХХХХХХХХ або 0ХХХХХХХХХ"
@@ -296,13 +296,6 @@ def message(request_dict):
                 service_request = ServiceRequest.objects.get(number=message_split[1])
 
                 handling = my_request_confirm_and_payment(viber_user, service_request)
-                global_text_message = handling[0]
-                global_keyboard_message = handling[1]
-            elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::payment$', message):
-                message_split = message.split('::')
-                service_request = ServiceRequest.objects.get(number=message_split[1])
-
-                handling = my_request_payment(viber_user, service_request)
                 global_text_message = handling[0]
                 global_keyboard_message = handling[1]
             elif re.match(r'^my_request::VSR-\d{1,4}-\d{1,2}-\d{1,2}-\d{1,6}::problem$', message):
@@ -702,7 +695,6 @@ def location_handler(viber_user, message, lat, lon, address):
     town = location.town
     code_ua = location.raw['address']['ISO3166-2-lvl4'].replace("-", "")
 
-
     split_address = address.split(", ")
     display_address = ''
     if len(split_address) >= 5:
@@ -1082,17 +1074,17 @@ def ViberUserToRabbitMQ(viber_user, operation):
                                               viber_user.viber_id)
 
 
-def ServiceRequestToRabbitMQ(service_request, operation):
-    body = {
-        'status_code': service_request.status_code,
-        'number': service_request.number,
-        'customer': service_request.customer.viber_id,
-        'address': service_request.address,
-        'position': service_request.position.codifier,
-        'service': service_request.service.id
-    }
-    new_package = CustomCreate.create_package(operation, 'application/json', 'kvb::service_request', json.dumps(body),
-                                              service_request.id)
+# def ServiceRequestToRabbitMQ(service_request, operation):
+#     body = {
+#         'status_code': service_request.status_code,
+#         'number': service_request.number,
+#         'customer': service_request.customer.viber_id,
+#         'address': service_request.address,
+#         'position': service_request.position.codifier,
+#         'service': service_request.service.id
+#     }
+#     new_package = CustomCreate.create_package(operation, 'application/json', 'kvb::service_request', json.dumps(body),
+#                                               service_request.id)
 
 
 # Функція записує меню у вайбер-користувача
@@ -1101,10 +1093,6 @@ def save_menu(viber_user, menu):
     viber_user.save()
 
 
-import pysnooper
-
-
-# @pysnooper.snoop()
 def test(viber_user):
     print("test-log")
     text = f'TEST'
