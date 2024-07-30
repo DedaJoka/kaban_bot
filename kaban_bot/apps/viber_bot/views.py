@@ -3,32 +3,22 @@ import re
 import time
 import hashlib
 import hmac
-from urllib.parse import urlencode, quote_plus, urlparse
-
 import requests
-
 import geocoder
-import os
-import base64
+import xml.etree.ElementTree as ET
 
+from urllib.parse import urlencode, quote_plus, urlparse
 from django.db.models import Q
 from django.db import transaction
 from django.http import HttpResponseBadRequest, HttpResponse
-from rest_framework import serializers
 from viberbot.api.messages import TextMessage, PictureMessage
 from datetime import date, datetime, timedelta
 from . import config, keyboards
-from .models import ViberUser, Service, Position, ServiceRequest, PriceList, Price
-from rabbitmq.models import RabbitPackage
-from rabbitmq.management.commands.package_creator import CustomCreate
+from .models import ViberUser, Service, Position, ServiceRequest, PriceList, Price, ViberUserRating
 from viberbot import BotConfiguration, Api
 from django.views.decorators.csrf import csrf_exempt
-from django.shortcuts import render, redirect
-from django.core.files.storage import default_storage
-from django.core.files.base import ContentFile
-from django.db.models.functions import Left
 from pyuca import Collator
-import xml.etree.ElementTree as ET
+from kaban_bot.apps.custom_api import CustomApi
 
 
 # Create your views here.
@@ -38,7 +28,6 @@ bot_configuration = BotConfiguration(
     auth_token=config.TOKEN
 )
 # viber = Api(bot_configuration)
-from kaban_bot.apps.custom_api import CustomApi
 
 viber = CustomApi(bot_configuration)
 collator = Collator()
@@ -227,9 +216,6 @@ def message(request_dict):
                     global_text_message = f'Дякуємо, Ваш номер збережено. Ви можете його змінити в будь-який момент в налаштуваннях.\nДля продовження скористайтесь контекстним меню.'
                     global_keyboard_message = keyboards.start_menu(viber_user)
 
-                    # # Відправляємо користувача до ЦРМ
-                    # ViberUserToRabbitMQ(viber_user, 'INSERT')
-
                 elif message_split[2] == 'no':
                     global_text_message = "Для продовження необхідно пройти авторизацію. Для цього поділіться номером телефону, котрий прив'язаний до вайберу, або введіть Ваш контактний номер телефону\nФормат: +380ХХХХХХХХХ або 0ХХХХХХХХХ"
                     global_keyboard_message = keyboards.phone_number(viber_user)
@@ -254,7 +240,7 @@ def message(request_dict):
             elif re.match(r'^service::\d{1,3}::location_manual::(\w)$', message):
                 global_text_message = f'Оберіть Вашу область.'
                 global_keyboard_message = keyboards.location_region_picker(viber_user, message)
-            elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,3}$', message):
+            elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,4}$', message):
                 global_text_message = f'Оберіть букву, з якої починається Ваш населений пункт.'
                 global_keyboard_message = keyboards.location_populated_centre_startswith(viber_user, message)
             elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}$', message):
@@ -405,8 +391,12 @@ def message(request_dict):
                 global_text_message = handling[0]
                 global_keyboard_message = handling[1]
             elif message == 'master_registration':
-                global_text_message = f'Для того щоб стати майстром Вам необхідно буде надати більш детальну інформацію про себе та свої навички. Чи походжуєтесь на обробку інформації?'
-                global_keyboard_message = keyboards.master_registration(viber_user)
+                global_text_message = f'Для того щоб стати майстром Вам необхідно буде надати більш детальну ' \
+                                      f'інформацію про себе, свої навички та пройти опитування. Для цього Ви можете ' \
+                                      f'звернутися за номером телефону: +380507944430'
+                # global_keyboard_message = keyboards.master_registration(viber_user)
+                global_keyboard_message = keyboards.start(viber_user)
+
             elif message == 'test':
                 handling = test(viber_user)
                 global_text_message = handling[0]
@@ -427,18 +417,10 @@ def message(request_dict):
     send(request_dict['sender']['id'])
 
 
-# ╔╗╔══╗─╔══╗╔╗╔╗╔═══╗╔╗╔╗╔════╗
-# ║║║╔═╝─║╔╗║║║║║║╔══╝║║║║╚═╗╔═╝
-# ║╚╝║───║║║║║║║║║╚══╗║╚╝║──║║──
-# ║╔╗║───║║║║║║╔║║╔══╝║╔╗║──║║──
-# ║║║╚═╗╔╝║║║║╚╝║║╚══╗║║║║──║║──
-# ╚╝╚══╝╚═╝╚╝╚══╝╚═══╝╚╝╚╝──╚╝──
-
-
 # Мої заявки
 def my_requests(viber_user):
     fourteen_days_ago = datetime.now() - timedelta(days=14)
-    excluded_status_codes = [2, 3, 7, 8, 9]
+    excluded_status_codes = [2, 3, 9, 9, 9]
     service_requests = ServiceRequest.objects.filter(
         Q(customer=viber_user) &
         (~Q(status_code__in=excluded_status_codes) | (Q(status_code=2) & Q(modifiedon__gte=fourteen_days_ago))))
@@ -449,7 +431,12 @@ def my_requests(viber_user):
     else:
         keyboard = keyboards.my_requests(viber_user, service_requests)
         for request in service_requests:
-            status_text = request.get_status_code_display()
+            print(request.status_code)
+            if request.status_code == '7':
+                print('asdfsdaf')
+                status_text = 'В роботі (Підтверджена та оплачена)'
+            else:
+                status_text = request.get_status_code_display()
             request_text = f'Номер заявки: {request.number}\nПослуга: {request.service}\nАдреса: {request.address}\nСтатус заявки: {status_text}\n\n'
             text = text + request_text
 
@@ -476,12 +463,20 @@ def my_request_handler(viber_user, service_request):
     elif service_request.status_code == '6':
         text = f'Ваша заявка в роботі. Очікуйте дзвінка від майстра.'
         keyboard = keyboards.my_request_cancel(viber_user, service_request)
+    elif service_request.status_code == '7':
+        text = f'Ваша заявка в роботі. Очікуйте дзвінка від майстра.'
+        keyboard = keyboards.my_request_cancel(viber_user, service_request)
     elif service_request.status_code == '2':
         text = f'Майстр позначив Вашу заявку як виконану. Ви можете оцінити майстра або повідомити про проблему.'
         keyboard = keyboards.my_request_done(viber_user, service_request)
+    elif service_request.status_code == '8':
+        text = f'Ви позначии цю заявку як "проблемну".\nДля того щоб вирішити будь-які проблеми з заявкою ви можете ' \
+               f'звернутись за номером телефону гарячої лінії: +3805044430'
+        keyboard = keyboards.my_request_cancel(viber_user, service_request)
     return text, keyboard
 
 
+# Подтверждение на оплату
 def my_request_confirm_and_payment(viber_user, service_request):
     if service_request.price:
         price = int(service_request.price * 100)
@@ -541,6 +536,7 @@ def my_request_confirm_and_payment(viber_user, service_request):
     return text, keyboard
 
 
+# Успешная оплата заявки
 def my_request_payment_successfully(viber_user, service_request):
     with transaction.atomic():
         # Переводимо заявку у статус "В роботі (Підтверджений майстер)"
@@ -562,37 +558,42 @@ def my_request_payment_successfully(viber_user, service_request):
     return text, keyboard
 
 
+# Клиент - про проблему
 def my_request_problem(viber_user, service_request):
     with transaction.atomic():
         # Переводимо заявку у статус "Уточнення (від клієнта)"
         service_request.status_code = 8
         service_request.save()
-    text = f'Дякую. Заявка {service_request.number} передана до відділу підтримки, незабаром з вами звяжуться для уточнення деталей'
+    text = f'Для того щоб вирішити будь-які проблеми з заявкою ви можете звернутись за номером телефону гарячої ' \
+           f'лінії: +3805044430'
     keyboard = keyboards.service_0(viber_user)
     return text, keyboard
 
 
-def my_request_assessment(viber_user, service_request, assessment1, assessment2):
+# Оценка и завершение заявки
+def my_request_assessment(viber_user, service_request, rating1, rating2):
     with transaction.atomic():
         # Переводимо заявку у статус "Завершено"
         service_request.status_code = 9
         service_request.save()
 
-    executor = service_request.executors.first()
-    body = {
-        'viber_id': executor.viber_id,
-        'type_assessment': "executor",
-        'assessment1': assessment1,
-        'assessment2': assessment2,
-    }
-    new_package = CustomCreate.create_package("INSERT", 'application/json', 'kvb::assessment', json.dumps(body),
-                                              service_request.id)
+        # Создаем и сохраняем новую запись в ViberUserRating
+        new_rating = ViberUserRating(
+            name=f'Оцінка майстра {viber_user.full_name} по заявці {service_request.number} ',
+            viber_user=viber_user,
+            rating1=int(rating1),
+            rating2=int(rating2),
+            type_rating=0
+        )
+        new_rating.save()
+    update_viber_user_average_rating(viber_user, 'executor_rating')
 
     text = f'Дякуємо за Вашу оцінку.\nДля продовження скористайтесь контекстним меню.'
     keyboard = keyboards.start_menu(viber_user)
     return text, keyboard
 
 
+# Замовник - відхилення майстра
 def my_request_reject(viber_user, service_request):
     # Відправляемо повідомлення Виконавцю
     executor = service_request.executors.first()
@@ -644,9 +645,12 @@ def my_request_reject(viber_user, service_request):
 
 
 def my_request_cancel(viber_user, service_request, response):
-    executors_count = service_request.executors.count()
 
-    if response == "yes":
+    if response == "no":
+        handling = my_requests(viber_user)
+        return handling[0], handling[1]
+
+    elif response == "yes":
         if service_request.status_code in ("5", "6"):
             # Відправляемо повідомлення Виконавцю
             executor = service_request.executors.first()
@@ -670,10 +674,6 @@ def my_request_cancel(viber_user, service_request, response):
             service_request.save()
 
         return text, keyboard
-
-    elif response == "no":
-        handling = my_requests(viber_user)
-        return handling[0], handling[1]
 
 
 def change_phone_number(viber_user, message):
@@ -742,6 +742,37 @@ def location_handler(viber_user, message, lat, lon, address):
     return text, keyboard
 
 
+def location_manual_street_handler(viber_user, message):
+    message_split = message.split("::")
+    menu = "::".join(message_split[:-1])
+
+    street = message_split[8]
+    modified_street = street.replace("_", " ")
+    viber_user.address = modified_street
+    viber_user.menu = menu + '::street'
+    viber_user.save()
+
+    text = f'Введіть номер Вашого будинку\nНаприклад: 64 (64/1)'
+    keyboard = keyboards.start_input(viber_user)
+
+    return text, keyboard
+
+
+def location_manual_number_handler(viber_user, message):
+    message_split = message.split("::")
+    menu = "::".join(message_split[:-1])
+
+    number = message_split[9]
+    modified_number = number.replace("_", " ")
+    viber_user.address = viber_user.address + ', буд. ' + modified_number
+    viber_user.menu = menu + '::number'
+    viber_user.save()
+
+    text = f'Введіть номер Вашої квартири\nНаприклад: 108\n\nЯкщо квартира відсутня, натисніть кнопку "Пропустити"'
+    keyboard = keyboards.skip(viber_user, viber_user.menu)
+    return text, keyboard
+
+
 def location_manual_handler(viber_user, message, skip=False):
     message_split = message.split("::")
     position = Position.objects.get(id=message_split[7])
@@ -776,43 +807,6 @@ def location_manual_handler(viber_user, message, skip=False):
     text = f'Ви підтверджуєте заявку?\nПослуга: {service.name}\nЦіна: {price_text}\n\nМісце проведення: {display_address}'
     keyboard = keyboards.yes_no(viber_user, 'service::' + str(service.id) + '::location::' + str(position.id))
 
-    body = {
-        'address': display_address,
-    }
-    json_body = json.dumps(body, ensure_ascii=False)
-    new_package = CustomCreate.create_package('INSERT', 'application/json', 'kvb::address', json_body)
-
-    return text, keyboard
-
-
-def location_manual_street_handler(viber_user, message):
-    message_split = message.split("::")
-    menu = "::".join(message_split[:-1])
-
-    street = message_split[8]
-    modified_street = street.replace("_", " ")
-    viber_user.address = modified_street
-    viber_user.menu = menu + '::street'
-    viber_user.save()
-
-    text = f'Введіть номер Вашого будинку\nНаприклад: 64 (64/1)'
-    keyboard = keyboards.start_input(viber_user)
-
-    return text, keyboard
-
-
-def location_manual_number_handler(viber_user, message):
-    message_split = message.split("::")
-    menu = "::".join(message_split[:-1])
-
-    number = message_split[9]
-    modified_number = number.replace("_", " ")
-    viber_user.address = viber_user.address + ', буд. ' + modified_number
-    viber_user.menu = menu + '::number'
-    viber_user.save()
-
-    text = f'Введіть номер Вашої квартири\nНаприклад: 108\n\nЯкщо квартира відсутня, натисніть кнопку "Пропустити"'
-    keyboard = keyboards.skip(viber_user, viber_user.menu)
     return text, keyboard
 
 
@@ -823,7 +817,7 @@ def verification_service_request(viber_user, message):
     position_id = message_split[3]
     response = message_split[4]
     if response == "no":
-        key_def = keyboards.service_1(viber_user, message.split('::')[1])
+        key_def = keyboards.service_1(viber_user, service_id)
         text = key_def[0]
         keyboard = key_def[1]
     elif response == "yes":
@@ -856,11 +850,8 @@ def verification_service_request(viber_user, message):
                 # Запись Price не найдена
                 pass
 
-        # ServiceRequestToRabbitMQ(service_request, 'INSERT')
-
         text = f'Ваша заявка створена!\nНомер заявки: {number}'
         keyboard = keyboards.start(viber_user)
-
         service_request_handler(service_request)
     return text, keyboard
 
@@ -880,6 +871,7 @@ def service_request_handler(service_request):
         viber.send_messages(executor.viber_id, [response_message])
 
 
+# Мастер - заявки
 def master_requests_handler(viber_user, prefix, service_requests):
     text = ""
     for request in service_requests:
@@ -894,6 +886,7 @@ def master_requests_handler(viber_user, prefix, service_requests):
     return text, keyboard
 
 
+# Мастер - відгукнутись на заявку
 def master_request_respond_handler(viber_user, service_request):
     with transaction.atomic():
         # Відвязуємо всіх виконавців
@@ -921,18 +914,21 @@ def master_request_respond_handler(viber_user, service_request):
     return text, keyboard
 
 
+# Мастер - про проблему
 def master_request_problem_handler(viber_user, service_request):
     with transaction.atomic():
         # Статус "Уточнення (від майстра)"
         service_request.status_code = 7
         service_request.save()
 
-        text = f'Дякуємо. Заявка {service_request.number} передана до відділу підтримки, незабаром з вами звяжуться для уточнення деталей.'
+        text = f'Для того щоб вирішити будь-які проблеми з заявкою ви можете звернутись за номером телефону гарячої ' \
+               f'лінії: +3805044430'
         keyboard = keyboards.master_requests(viber_user)
 
         return text, keyboard
 
 
+# Мастер - заявка у виконано
 def master_request_done_handler(viber_user, service_request, response):
     if response == 'yes':
         with transaction.atomic():
@@ -959,132 +955,12 @@ def master_request_done_handler(viber_user, service_request, response):
     return text, keyboard
 
 
-# "Погодження" на реєстрацію майстра
-def master_registration_page_view(request, viber_id):
-    services = Service.objects.filter()
-    viber_user = ViberUser.objects.get(viber_id=viber_id)
-    # services = json.dumps(nodeToJSON(Service, None), ensure_ascii=False)
-    # position = json.dumps(nodeToJSON(Position, None), ensure_ascii=False)
-    # return render(request, 'master_registration_page.html', {'user': viber_user, 'services': services, 'position': position})
-    return render(request, 'master_registration_page.html',
-                  {'viber_user': viber_user, 'services': services})
-
-
-# Функція обробки submit реєстрації майстра
-def master_registration_page_submit(request):
-    if request.method == 'POST':
-        form_data = request.POST
-        form_file = request.FILES
-        viber_user = ViberUser.objects.get(viber_id=form_data["viber_id"])
-
-        body = {
-            'viber_id': form_data["viber_id"],
-            'services': [],
-            'certificates': []
-        }
-
-        # Перевірка і апдейт full_name
-        if viber_user.full_name != form_data["full_name"]:
-            viber_user.full_name = form_data["full_name"]
-            viber_user.save()
-
-        # Очиcтка послуг
-        viber_user.service.clear()
-
-        # DATA
-        for key, value in form_data.items():
-            # Послуги
-            if key.startswith("service::"):
-                service_id = key.split("::")[1]
-                service = Service.objects.get(id=service_id)
-                if service not in viber_user.service.all():
-                    viber_user.service.add(service)
-
-                service = {
-                    'service_id': service_id
-                }
-                body['services'].append(service)
-            # щось інше
-            else:
-                print(f'{key} - {value}')
-
-        # FILES
-        for key, value in form_file.items():
-            manufacturer = key.split("::")[1]
-            file_name = f'{form_data["viber_id"]}_{manufacturer}_{value.name}'
-            file_content_type = value.content_type
-            file_base64 = CustomCreate.encode_file_to_base64(value)
-            certificate = {
-                'manufacturer': manufacturer,
-                # 'filename': file_name,
-                # 'file_content_type': file_content_type,
-                'content_base64': f'{file_name}:{file_content_type};base64,{file_base64}'
-            }
-            body['certificates'].append(certificate)
-
-        json_body = json.dumps(body)
-
-        new_package = CustomCreate.create_package('INSERT', "application/json", 'kvb_master', json_body,
-                                                  form_data["viber_id"])
-
-        # Перенаправлення на сторінку "дякуємо за реєстрацію"
-        return redirect('https://www.google.com.ua/')
-
-
-# Функція древовидний запис у Json
-def nodeToJSON(model_name, id):
-    if id:
-        objects = model_name.objects.filter(id=id)
-    else:
-        objects = model_name.objects.filter(parent__isnull=True)
-    data = []
-    for object in objects:
-        node = {}
-        node['id'] = object.id
-        node['text'] = object.name
-
-        childrens = object.get_children()
-        if childrens:
-            node['childrens'] = []
-            for children in childrens:
-                node['childrens'].append(nodeToJSON(model_name, children.id))
-        data.append(node)
-    return data
-
-
 def get_parents_names(node):
     names = [node.name]
     while node.parent:
         node = node.parent
         names.insert(0, node.name)
     return ", ".join(names)
-
-
-def ViberUserToRabbitMQ(viber_user, operation):
-    class ViberUserSerializer(serializers.ModelSerializer):
-        class Meta:
-            model = ViberUser
-            fields = ['status_code', 'viber_id', 'full_name', 'phone_number']
-
-    viber_user_serializer = ViberUserSerializer(viber_user)
-    viber_user_json_data = viber_user_serializer.data
-    json_data = json.dumps(viber_user_json_data, ensure_ascii=False).encode('utf-8')
-    decoded_json_data = json_data.decode('utf-8')
-    new_package = CustomCreate.create_package(operation, 'application/json', 'kvb::viber_user', decoded_json_data,
-                                              viber_user.viber_id)
-
-
-# def ServiceRequestToRabbitMQ(service_request, operation):
-#     body = {
-#         'status_code': service_request.status_code,
-#         'number': service_request.number,
-#         'customer': service_request.customer.viber_id,
-#         'address': service_request.address,
-#         'position': service_request.position.codifier,
-#         'service': service_request.service.id
-#     }
-#     new_package = CustomCreate.create_package(operation, 'application/json', 'kvb::service_request', json.dumps(body),
-#                                               service_request.id)
 
 
 # Функція записує меню у вайбер-користувача
@@ -1116,3 +992,29 @@ def get_price_list(position):
     # Если у текущей записи нет прайс-листа и нет родителя, возвращаем None
     else:
         return None
+
+
+from django.db.models import Avg
+
+
+def update_viber_user_average_rating(viber_user, type_rating):
+    # Находим все рейтинги, связанные с данным пользователем
+    ratings = ViberUserRating.objects.filter(viber_user=viber_user)
+
+    # Если нет ни одной оценки, устанавливаем средний рейтинг в 0 или любое другое значение по умолчанию
+    if not ratings.exists():
+        if type_rating == 'executor_rating':
+            viber_user.executor_rating = 0
+        elif type_rating == 'customer_rating':
+            viber_user.customer_rating = 0
+    else:
+        # Вычисляем средний рейтинг
+        average_rating = ratings.aggregate(average=Avg('average_rating'))['average']
+        # Обновляем поле average_rating в модели ViberUser
+        if type_rating == 'executor_rating':
+            viber_user.executor_rating = average_rating
+        elif type_rating == 'customer_rating':
+            viber_user.customer_rating = average_rating
+
+    # Сохраняем изменения
+    viber_user.save()

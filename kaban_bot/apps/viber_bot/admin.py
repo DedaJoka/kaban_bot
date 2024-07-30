@@ -1,13 +1,10 @@
 from django.contrib import admin
 from django.db import models
 from mptt.admin import MPTTModelAdmin, DraggableMPTTAdmin
-from .models import ViberUser, Service, Position, ServiceRequest, UploadedFile, PriceList, Price
+from .models import ViberUser, Service, Position, ServiceRequest, UploadedFile, PriceList, Price, ViberUserRating
 from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from mptt.forms import TreeNodeChoiceField
-
-
-# Register your models here.
 
 
 class ViberUserForm(forms.ModelForm):
@@ -27,6 +24,7 @@ class ViberUserForm(forms.ModelForm):
     class Meta:
         model = ViberUser
         fields = '__all__'
+
 
 @admin.register(ViberUser)
 class ViberUserAdmin(admin.ModelAdmin):
@@ -51,8 +49,6 @@ class ViberUserAdmin(admin.ModelAdmin):
     )
 
 
-
-
 class ServiceRequestForm(forms.ModelForm):
     # Определяем форму с виджетом FilteredSelectMultiple для поля ManyToManyField 'executors'
     executors = forms.ModelMultipleChoiceField(
@@ -70,6 +66,7 @@ class ServiceRequestForm(forms.ModelForm):
     class Meta:
         model = ServiceRequest
         fields = '__all__'
+
 
 @admin.register(ServiceRequest)
 class ServiceRequestAdmin(admin.ModelAdmin):
@@ -91,14 +88,13 @@ class ServiceRequestAdmin(admin.ModelAdmin):
     readonly_fields = ('modifiedon',)
 
 
-
-
 class PositionChildrenInline(admin.TabularInline):
     model = Position
     fk_name = 'parent'
     extra = 0
     fields = ['name', 'codifier']
     ordering = ['name']
+
 
 @admin.register(Position)
 class PositionAdmin(DraggableMPTTAdmin):
@@ -107,14 +103,13 @@ class PositionAdmin(DraggableMPTTAdmin):
     inlines = [PositionChildrenInline]
 
 
-
-
 class ServiceChildrenInline(admin.TabularInline):
     model = Service
     fk_name = 'parent'
     extra = 0
     fields = ['name', 'priority']
     ordering = ['priority']
+
 
 @admin.register(Service)
 class ServiceAdmin(DraggableMPTTAdmin):
@@ -132,13 +127,9 @@ class ServiceAdmin(DraggableMPTTAdmin):
     # ordering = ['tree_id', 'level', 'priority']
 
 
-
-
 @admin.register(UploadedFile)
 class UploadedFileAdmin(admin.ModelAdmin):
     list_display = ['createdon']
-
-
 
 
 class PriceListInline(admin.TabularInline):
@@ -148,6 +139,19 @@ class PriceListInline(admin.TabularInline):
     fields = ['service', 'price']
     ordering = ['service']
 
+    def has_add_permission(self, request, obj=None):
+        return False  # Запрещает добавление новых записей
+
+    def has_change_permission(self, request, obj=None):
+        return False  # Запрещает изменение существующих записей
+
+    def get_readonly_fields(self, request, obj=None):
+        return self.fields  # Все поля только для чтения
+
+    def has_delete_permission(self, request, obj=None):
+        return False  # Запрещает удаление записей
+
+
 @admin.register(PriceList)
 class PriceListAdmin(admin.ModelAdmin):
     list_display = ['name', 'createdon', 'status_code']
@@ -156,10 +160,15 @@ class PriceListAdmin(admin.ModelAdmin):
     readonly_fields = ('createdon',)
 
 
-
-
 @admin.register(Price)
 class PriceAdmin(admin.ModelAdmin):
-    list_display = ['createdon', 'status_code', 'price_list', 'service', 'price']
+    readonly_fields = ('createdon', 'name')
+    list_display = ['name', 'status_code', 'price_list', 'service', 'price']
     list_filter = ('status_code',)
-    readonly_fields = ('createdon',)
+
+
+@admin.register(ViberUserRating)
+class ViberUserRatingAdmin(admin.ModelAdmin):
+    list_display = ['createdon', 'status_code', 'type_rating', 'viber_user', 'rating1', 'rating2', 'average_rating']
+    list_filter = ('status_code',)
+    readonly_fields = ('createdon', 'average_rating')

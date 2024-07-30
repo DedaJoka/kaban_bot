@@ -45,19 +45,6 @@ def button(columns, rows, text, img, bgimg, actiontype, actionbody, opacity=100)
     return button
 
 
-def silent_button(columns, rows):
-    button = {
-        "Columns": columns,
-        "Rows": rows,
-        "Text": "",
-        "ActionType": "",
-        "ActionBody": "",
-        "Silent": "true",
-        "TextOpacity": 0,
-    }
-    return button
-
-
 # buttons.append(button(6, 1, # Columns & Rows
 # f'<font size=22 color="#FFFFFF"><b>СюдаПисатьТекст</b></font>',
 # # img - картинка (НЕ ОБЯЗАТЕЛЬНО)
@@ -69,6 +56,19 @@ def silent_button(columns, rows):
 # # actionbody - ОТВЕТ (дописать ", 0" - прозрачный текст)
 # f'{viber_user.once}&&СюдаПистьОтвет',
 # ))
+
+
+def silent_button(columns, rows):
+    button = {
+        "Columns": columns,
+        "Rows": rows,
+        "Text": "",
+        "ActionType": "",
+        "ActionBody": "",
+        "Silent": "true",
+        "TextOpacity": 0,
+    }
+    return button
 
 
 def button_back(text, img, bgimg, actionbody, opacity=100):

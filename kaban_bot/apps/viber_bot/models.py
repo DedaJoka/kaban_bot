@@ -1,12 +1,6 @@
-import json
-
 from django.db import models
 from mptt.models import MPTTModel, TreeForeignKey
 from django.core.validators import MinValueValidator, MaxValueValidator
-from rabbitmq.management.commands.package_creator import CustomCreate
-
-
-# Create your models here.
 
 
 class Service(MPTTModel):
@@ -79,6 +73,7 @@ class Price(models.Model):
     status_code = models.CharField(verbose_name="Стан", choices=status_code_set, max_length=1, default=0)
 
     # Кастомні поля
+    name = models.CharField(verbose_name="Назва", max_length=100, blank=True)
     service = models.ForeignKey(Service, verbose_name="Послуга", on_delete=models.CASCADE, related_name='price_service')
     price_list = models.ForeignKey(PriceList, verbose_name="Прайс-лист", on_delete=models.CASCADE,
                                    related_name='price_price_list')
@@ -88,6 +83,14 @@ class Price(models.Model):
         app_label = 'viber_bot'
         verbose_name = 'Прайс'
         verbose_name_plural = 'Прайси'
+
+    def __str__(self):
+        return self.service.name
+
+    def save(self, *args, **kwargs):
+        if not self.name:  # Проверяем, что поле name пустое
+            self.name = f'Ціна {self.service.productnumber} для {self.price_list.name}'
+        super().save(*args, **kwargs)  # Вызываем стандартный метод save
 
 
 class Position(MPTTModel):
@@ -161,7 +164,7 @@ class ViberUser(models.Model):
         verbose_name_plural = 'Користувачі Viber'
 
     def __str__(self):
-        return self.full_name
+        return f'{self.full_name} {self.phone_number}'
 
 
 class ServiceRequest(models.Model):
@@ -195,27 +198,6 @@ class ServiceRequest(models.Model):
     price = models.DecimalField(verbose_name="Вартість", max_digits=10, decimal_places=2, null=True, blank=True)
     confirmed = models.BooleanField(verbose_name="Підтверджена", default=False)
 
-    def save(self, *args, **kwargs):
-        # Вызов оригинального метода save() для выполнения сохранения записи
-        super().save(*args, **kwargs)
-
-        # отправляем пакет!
-        body = {
-            'status_code': self.status_code,
-            'number': self.number,
-            'customer': self.customer.viber_id,
-            'address': self.address,
-            'position': self.position.codifier,
-            'service': self.service.productnumber
-        }
-        if self.status_code == 5 or self.status_code == 6:
-            executor = self.executors.first()
-            body['executor'] = executor.viber_id
-        json_data = json.dumps(body, ensure_ascii=False).encode('utf-8')
-        decoded_json_data = json_data.decode('utf-8')
-        new_package = CustomCreate.create_package('INSERT', 'application/json', 'kvb::service_request',
-                                                  decoded_json_data, self.id)
-
     class Meta:
         app_label = 'viber_bot'
         verbose_name = 'Заявка'
@@ -231,3 +213,33 @@ class UploadedFile(models.Model):
     file = models.FileField(verbose_name="Файл", upload_to='uploads_viber_bot/')
     file_name = models.CharField(verbose_name="Назва файлу", max_length=100, blank=False)
     user_viber_id = models.CharField(verbose_name="Вайбер ідентифікатор", max_length=100, blank=False)
+
+
+class ViberUserRating(models.Model):
+    # Стандартні поля
+    createdon = models.DateTimeField("Дата створення", auto_now_add=True, blank=False)
+    status_code_set = (('0', 'Активований'), ('1', 'Деактивований'))
+    status_code = models.CharField(verbose_name="Стан", choices=status_code_set, max_length=1, default=0)
+
+    # Кастомні поля
+    name = models.CharField(verbose_name="Назва", max_length=100, blank=True)
+    viber_user = models.ForeignKey(ViberUser, verbose_name="Користувач Viber", on_delete=models.CASCADE,
+                                   related_name='viber_user_rating')
+    rating1 = models.PositiveIntegerField(default=1)
+    rating2 = models.PositiveIntegerField(default=1)
+    average_rating = models.FloatField(editable=False)
+
+    type_rating_set = (('0', 'Майстер'), ('1', 'Клієнт'))
+    type_rating = models.CharField(verbose_name="Тип оцінки", choices=type_rating_set, max_length=1, default=0)
+
+    def save(self, *args, **kwargs):
+        self.average_rating = (self.rating1 + self.rating2) / 2.0
+        super(ViberUserRating, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Review({self.rating1}, {self.rating2}, {self.average_rating})"
+
+    class Meta:
+        app_label = 'viber_bot'
+        verbose_name = 'Оцінка користувача Viber'
+        verbose_name_plural = 'Оцінка користувачів Viber'

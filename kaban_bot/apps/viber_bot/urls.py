@@ -23,7 +23,5 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('incoming/', views.incoming, name='incoming'),
     path('', views.incoming, name='incoming'),
-    path('viber_bot/master_registration/<str:viber_id>/', views.master_registration_page_view, name='master_registration_page'),
-    path('master_registration/registration_submit', views.master_registration_page_submit, name='master_registration/registration_submit'),
 ]
 
