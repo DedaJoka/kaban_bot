@@ -138,7 +138,8 @@ def message(request_dict):
     print(request_dict['sender']['id'])
     print(f'\n\nmessage_type = {message_type}\nmessage_text = {message_text}\n\n')
 
-    need_handled = True
+    need_handled = False
+
     if not re.match(r"^\d+&&", message_text):
         if re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}$',
                     viber_user.menu) and not re.match(r"https://", message_text):
