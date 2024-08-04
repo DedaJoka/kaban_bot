@@ -138,44 +138,43 @@ def message(request_dict):
     print(request_dict['sender']['id'])
     print(f'\n\nmessage_type = {message_type}\nmessage_text = {message_text}\n\n')
 
-    need_handled = False
-    if not re.match(r"^\d+&&", message_text):
-        if re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}$',
-                    viber_user.menu) and not re.match(r"https://", message_text):
-            modified_street = message_text.replace(" ", "_")
-            message = viber_user.menu + '::' + modified_street
-            need_handled = True
-        elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street$',
-                      viber_user.menu) and not re.match(r"https://", message_text):
-            modified_number = message_text.replace(" ", "_")
-            message = viber_user.menu + '::' + modified_number
-            need_handled = True
-        elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street::number$',
-                      viber_user.menu) and not re.match(r"https://", message_text):
-            message = viber_user.menu + '::' + message_text
-            need_handled = True
-        elif viber_user.menu == 'phone_number' and message_text != 'setting':
-            message = 'phone_number::' + message_text
-            need_handled = True
-        else:
-            message = message_text
-            need_handled = True
-    elif not re.match(r"https://", message_text):
-        once = message_text.split('&&')[0]
-        message = message_text.split('&&')[1]
-        print(f'???? {once} = {viber_user.once} ????')
-        global_viber_id = viber_user.viber_id
-
-        #Тут +1 к once (костылю)
-        if int(once) == viber_user.once and global_viber_id:
-            need_handled = True
-            viber_user.once += 1
-            viber_user.save()
+    need_handled = True
+    # if not re.match(r"^\d+&&", message_text):
+    #     if re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}$',
+    #                 viber_user.menu) and not re.match(r"https://", message_text):
+    #         modified_street = message_text.replace(" ", "_")
+    #         message = viber_user.menu + '::' + modified_street
+    #         need_handled = True
+    #     elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street$',
+    #                   viber_user.menu) and not re.match(r"https://", message_text):
+    #         modified_number = message_text.replace(" ", "_")
+    #         message = viber_user.menu + '::' + modified_number
+    #         need_handled = True
+    #     elif re.match(r'^service::\d{1,3}::location_manual::(\w)::\d{1,6}::(\w)::\d{1,3}::\d{1,6}::street::number$',
+    #                   viber_user.menu) and not re.match(r"https://", message_text):
+    #         message = viber_user.menu + '::' + message_text
+    #         need_handled = True
+    #     elif viber_user.menu == 'phone_number' and message_text != 'setting':
+    #         message = 'phone_number::' + message_text
+    #         need_handled = True
+    #     else:
+    #         message = message_text
+    #         need_handled = True
+    # elif not re.match(r"https://", message_text):
+    #     once = message_text.split('&&')[0]
+    #     message = message_text.split('&&')[1]
+    #     print(f'???? {once} = {viber_user.once} ????')
+    #     global_viber_id = viber_user.viber_id
+    #
+    #     #Тут +1 к once (костылю)
+    #     if int(once) == viber_user.once and global_viber_id:
+    #         need_handled = True
+    #         viber_user.once += 1
+    #         viber_user.save()
 
     print(f'то что пытаемя обработать\nmessage = {message}\n\n')
 
     if need_handled:
-        print("handled")
 
         if message_type == 'text':
             if viber_user.menu == 'registration':
