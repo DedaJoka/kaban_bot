@@ -29,7 +29,8 @@ class ViberUserForm(forms.ModelForm):
 @admin.register(ViberUser)
 class ViberUserAdmin(admin.ModelAdmin):
     list_display = ['viber_id', 'phone_number', 'full_name', 'executor', 'createdon', 'status_code']
-    form = ViberUserForm
+    # form = ViberUserForm
+    autocomplete_fields = 'position', 'service'
     fieldsets = (
         (None, {
             'fields': ('full_name', 'phone_number', 'executor', 'viber_id', 'system_administrator'),
@@ -115,6 +116,7 @@ class ServiceChildrenInline(admin.TabularInline):
 class ServiceAdmin(DraggableMPTTAdmin):
     list_display = ('tree_actions', 'indented_title', 'productnumber', 'priority')
     list_display_links = ('indented_title',)
+    search_fields = 'name',
     fieldsets = (
         ('Загальна інформація', {
             'fields': ('status_code', 'name', 'productnumber', 'parent'),
