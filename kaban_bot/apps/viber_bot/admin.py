@@ -10,13 +10,13 @@ from mptt.forms import TreeNodeChoiceField
 class ViberUserForm(forms.ModelForm):
     # Определяем форму с виджетом FilteredSelectMultiple для поля ManyToManyField 'position'
     position = forms.ModelMultipleChoiceField(
-        queryset=Position.objects.all(),
+        queryset=Position.objects.all()[:10],
         widget=FilteredSelectMultiple("Розташування", is_stacked=False),
         required=False,
     )
 
     service = forms.ModelMultipleChoiceField(
-        queryset=Service.objects.all(),
+        queryset=Service.objects.all()[:10],
         widget=FilteredSelectMultiple("Послуги", is_stacked=False),
         required=False,
     )
