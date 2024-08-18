@@ -19,6 +19,7 @@ from viberbot import BotConfiguration, Api
 from django.views.decorators.csrf import csrf_exempt
 from pyuca import Collator
 from kaban_bot.apps.custom_api import CustomApi
+from django.utils import timezone
 
 
 # Create your views here.
@@ -135,8 +136,9 @@ def message(request_dict):
     global_viber_id = request_dict['sender']['id']
     viber_user = ViberUser.objects.get(viber_id=global_viber_id)
 
-    print(request_dict['sender']['id'])
-    print(f'\n\nmessage_type = {message_type}\nmessage_text = {message_text}\n\n')
+
+    print(f"\n\nViberUserID: {request_dict['sender']['id']}\n"
+          f"message_type: {message_type}\nmessage_text: {message_text}\n\n")
 
     need_handled = False
 
@@ -164,6 +166,7 @@ def message(request_dict):
     elif not re.match(r"https://", message_text):
         once = message_text.split('&&')[0]
         message = message_text.split('&&')[1]
+        print(f'то что будем обрабатывать:\nmessage = {message}\n\n')
         print(f'???? {once} = {viber_user.once} ????')
         global_viber_id = viber_user.viber_id
 
@@ -172,11 +175,21 @@ def message(request_dict):
             need_handled = True
             viber_user.once += 1
             viber_user.save()
+        elif global_viber_id:
+            three_hours_after_last_activity = viber_user.last_activity + timedelta(hours=3)
+            if timezone.now() > three_hours_after_last_activity:
+                save_menu(viber_user, 'start')
+                global_text_message = f'Вибачте, сталася помилка під час обробки вашого запиту. Будь ласка, повторіть дію, скориставшись контекстним меню.'
+                global_keyboard_message = keyboards.start_menu(viber_user)
 
-    print(f'то что пытаемя обработать\nmessage = {message}\n\n')
+
 
     if need_handled:
         print("handled")
+
+        # Обновление поля last_activity текущей датой и временем у пользователя
+        viber_user.last_activity = timezone.now()
+        viber_user.save(update_fields=['last_activity'])
 
         if message_type == 'text':
             if viber_user.menu == 'registration':

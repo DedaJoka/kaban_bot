@@ -44,7 +44,7 @@ class ViberUserAdmin(admin.ModelAdmin):
         }),
         ('Костыли', {
             'classes': ('wide',),
-            'fields': ('once', 'menu', 'address'),
+            'fields': ('once', 'menu', 'address', 'last_activity'),
         }),
     )
 

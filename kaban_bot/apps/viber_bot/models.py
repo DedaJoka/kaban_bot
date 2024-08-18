@@ -1,6 +1,7 @@
 from django.db import models
 from mptt.models import MPTTModel, TreeForeignKey
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils import timezone
 
 
 class Service(MPTTModel):
@@ -141,6 +142,7 @@ class ViberUser(models.Model):
     full_name = models.CharField(verbose_name="ПІБ", max_length=100, blank=True)
     phone_number = models.CharField("Телефон", max_length=13, blank=True, null=True)
     menu = models.CharField(verbose_name="Меню", max_length=100, blank=True)
+    last_activity = models.DateTimeField(verbose_name="Остання активність", default=timezone.now)
     address = models.CharField(verbose_name="Адреса", max_length=400, blank=True, null=True)
     position = models.ManyToManyField(Position, verbose_name="Розташування", related_name='viber_user_position')
     service = models.ManyToManyField(Service, verbose_name="Послуги", related_name='viber_user_service')
