@@ -128,7 +128,8 @@ class Position(MPTTModel):
         order_insertion_by = ['name']
 
     def __str__(self):
-        return self.name
+        parent_name = self.parent.name if self.parent else "Без батьківського розташування"
+        return f"{self.get_type_code_display()} {self.name} ({parent_name})"
 
 
 class ViberUser(models.Model):
